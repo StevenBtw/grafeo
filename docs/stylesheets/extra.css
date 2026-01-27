@@ -1,0 +1,130 @@
+/* Custom styles for Graphos documentation */
+
+/* Hero section on landing page */
+.hero {
+  text-align: center;
+  padding: 2rem 0 4rem 0;
+}
+
+.hero h1 {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.hero h3 {
+  font-weight: 400;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 2rem;
+}
+
+/* Card grid improvements */
+.grid.cards > ul > li {
+  border-radius: 0.5rem;
+}
+
+/* Code block improvements */
+.md-typeset pre > code {
+  font-size: 0.85rem;
+}
+
+/* Admonition improvements */
+.md-typeset .admonition {
+  border-radius: 0.5rem;
+}
+
+/* Footer links */
+.md-footer-meta__inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Logo adjustments */
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 1.5rem;
+  width: auto;
+}
+
+/* Navigation tabs styling */
+.md-tabs__link {
+  font-weight: 500;
+}
+
+/* Button styling */
+.md-button {
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+}
+
+.md-button--primary {
+  background-color: var(--md-primary-fg-color);
+  border-color: var(--md-primary-fg-color);
+}
+
+/* Table improvements */
+.md-typeset table:not([class]) {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+}
+
+/* Dark mode table adjustments */
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  background-color: var(--md-primary-fg-color--dark);
+}
+
+/* Inline code styling */
+.md-typeset code {
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.3rem;
+}
+
+/* Search improvements */
+.md-search__form {
+  border-radius: 0.5rem;
+}
+
+/* Announcement bar */
+.md-banner {
+  background-color: var(--md-accent-fg-color);
+}
+
+/* Version selector */
+.md-version__current {
+  font-weight: 500;
+}
+
+/* Social icons in footer */
+.md-social__link svg {
+  max-height: 1.25rem;
+}
+
+/* Mermaid diagram styling */
+.mermaid {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 76.1875em) {
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+}
+
+@media screen and (max-width: 44.9375em) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero h3 {
+    font-size: 1rem;
+  }
+}
