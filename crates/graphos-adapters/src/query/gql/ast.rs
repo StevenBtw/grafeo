@@ -74,7 +74,7 @@ pub struct NodePattern {
     pub span: Option<SourceSpan>,
 }
 
-/// A path pattern like (a)-[:KNOWS]->(b).
+/// A path pattern like `(a)-[:KNOWS]->(b)`.
 #[derive(Debug, Clone)]
 pub struct PathPattern {
     /// Source node pattern.
@@ -85,7 +85,7 @@ pub struct PathPattern {
     pub span: Option<SourceSpan>,
 }
 
-/// An edge pattern like -[:KNOWS]->.
+/// An edge pattern like `-[:KNOWS]->`.
 #[derive(Debug, Clone)]
 pub struct EdgePattern {
     /// Variable name (optional).

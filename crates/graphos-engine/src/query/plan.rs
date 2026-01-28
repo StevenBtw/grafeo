@@ -574,7 +574,7 @@ pub enum LogicalExpression {
     /// Map literal (e.g., {name: 'Alice', age: 30}).
     Map(Vec<(String, LogicalExpression)>),
 
-    /// Index access (e.g., list[0]).
+    /// Index access (e.g., `list[0]`).
     IndexAccess {
         /// The base expression (typically a list or string).
         base: Box<LogicalExpression>,

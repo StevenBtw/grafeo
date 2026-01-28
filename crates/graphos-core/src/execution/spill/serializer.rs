@@ -188,7 +188,7 @@ pub fn deserialize_value<R: Read + ?Sized>(r: &mut R) -> std::io::Result<Value> 
 
 /// Serializes a row (slice of Values) to bytes.
 ///
-/// Format: [num_columns: u64][value1][value2]...
+/// Format: `[num_columns: u64][value1][value2]...`
 ///
 /// Returns the number of bytes written.
 ///

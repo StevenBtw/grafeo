@@ -153,7 +153,7 @@ pub enum FilterExpression {
     List(Vec<FilterExpression>),
     /// Map literal (e.g., {name: 'Alice', age: 30}).
     Map(Vec<(String, FilterExpression)>),
-    /// Index access (e.g., list[0]).
+    /// Index access (e.g., `list[0]`).
     IndexAccess {
         /// The base expression.
         base: Box<FilterExpression>,

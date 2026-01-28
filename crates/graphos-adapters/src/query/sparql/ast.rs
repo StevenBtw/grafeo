@@ -161,7 +161,7 @@ pub enum GraphPattern {
     /// UNION of patterns.
     Union(Vec<GraphPattern>),
 
-    /// GRAPH ?g { ... } or GRAPH <iri> { ... }.
+    /// GRAPH ?g { ... } or GRAPH `<iri>` { ... }.
     NamedGraph {
         /// The graph (variable or IRI).
         graph: VariableOrIri,

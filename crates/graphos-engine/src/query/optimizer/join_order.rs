@@ -89,7 +89,7 @@ impl JoinGraph {
     ///
     /// # Panics
     ///
-    /// Panics if `from` or `to` were not previously added via [`add_node`].
+    /// Panics if `from` or `to` were not previously added via `add_node`.
     pub fn add_edge(&mut self, from: usize, to: usize, conditions: Vec<JoinCondition>) {
         self.edges.push(JoinEdge {
             from,

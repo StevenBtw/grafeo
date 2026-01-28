@@ -177,7 +177,7 @@ impl BitVector {
         self.len - self.count_ones()
     }
 
-    /// Converts back to a Vec<bool>.
+    /// Converts back to a `Vec<bool>`.
     #[must_use]
     pub fn to_bools(&self) -> Vec<bool> {
         (0..self.len).map(|i| self.get(i).unwrap()).collect()

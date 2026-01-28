@@ -101,7 +101,7 @@ pub struct NodePattern {
     pub span: Option<SourceSpan>,
 }
 
-/// A path pattern like (a)-[r:KNOWS]->(b).
+/// A path pattern like `(a)-[r:KNOWS]->(b)`.
 #[derive(Debug, Clone)]
 pub struct PathPattern {
     /// Starting node pattern.
@@ -369,7 +369,7 @@ pub enum Expression {
         /// Property name.
         property: String,
     },
-    /// Index access: expr[index]
+    /// Index access: `expr[index]`
     IndexAccess {
         /// The base expression.
         base: Box<Expression>,

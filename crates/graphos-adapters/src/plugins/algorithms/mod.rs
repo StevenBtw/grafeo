@@ -6,9 +6,9 @@
 //!
 //! ## Algorithm Categories
 //!
-//! - [`traversal`] - BFS, DFS with visitor pattern
-//! - [`components`] - Connected components, SCC, topological sort
-//! - [`shortest_path`] - Dijkstra, A*, Bellman-Ford, Floyd-Warshall
+//! - `traversal` - BFS, DFS with visitor pattern
+//! - `components` - Connected components, SCC, topological sort
+//! - `shortest_path` - Dijkstra, A*, Bellman-Ford, Floyd-Warshall
 //!
 //! ## Usage
 //!
