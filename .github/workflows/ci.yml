@@ -147,8 +147,7 @@ jobs:
           pip install pytest pytest-asyncio
 
       - name: Run Python tests
-        working-directory: crates/graphos-python
-        run: pytest tests/ -v
+        run: pytest tests/python/ -v --ignore=tests/python/benchmark_graphos.py --ignore=tests/python/benchmark_phases.py
 
   # Benchmark (only on main)
   benchmark:

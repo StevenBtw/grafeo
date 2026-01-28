@@ -23,7 +23,9 @@
 //! ```
 
 // Re-export the main database API
-pub use graphos_engine::{Catalog, CatalogError, Config, GraphosDB, IndexDefinition, IndexType, Session};
+pub use graphos_engine::{
+    Catalog, CatalogError, Config, GraphosDB, IndexDefinition, IndexType, Session,
+};
 
 // Re-export core types for advanced usage
 pub use graphos_common::types::{EdgeId, NodeId, Value};
