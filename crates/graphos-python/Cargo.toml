@@ -26,7 +26,7 @@ tokio = { workspace = true }
 default = ["gql"]
 gql = ["graphos-engine/gql"]
 cypher = ["graphos-engine/cypher"]
-sparql = ["graphos-engine/sparql"]
+sparql = ["graphos-engine/sparql", "graphos-engine/rdf"]
 gremlin = ["graphos-engine/gremlin"]
 graphql = ["graphos-engine/graphql"]
 full = ["gql", "cypher", "sparql", "gremlin", "graphql"]
