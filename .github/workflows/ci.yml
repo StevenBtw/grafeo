@@ -133,16 +133,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-python-
 
-      - name: Install maturin
-        run: pip install maturin
+      - name: Build Python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          args: --release --out dist -m crates/graphos-python/Cargo.toml
+          sccache: 'true'
 
-      - name: Build Python package
-        working-directory: crates/graphos-python
-        run: maturin develop
-
-      - name: Install test dependencies
-        working-directory: crates/graphos-python
-        run: pip install pytest pytest-asyncio
+      - name: Install Python package and test dependencies
+        shell: bash
+        run: |
+          pip install dist/*.whl
+          pip install pytest pytest-asyncio
 
       - name: Run Python tests
         working-directory: crates/graphos-python

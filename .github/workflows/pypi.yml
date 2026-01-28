@@ -30,6 +30,7 @@ jobs:
           args: --release --out dist -m crates/graphos-python/Cargo.toml
           sccache: "true"
           manylinux: auto
+          rust-toolchain: stable
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -57,6 +58,7 @@ jobs:
           args: --release --out dist -m crates/graphos-python/Cargo.toml
           sccache: "true"
           manylinux: musllinux_1_2
+          rust-toolchain: stable
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -95,7 +97,7 @@ jobs:
     strategy:
       matrix:
         platform:
-          - runner: macos-13
+          - runner: macos-14
             target: x86_64
           - runner: macos-14
             target: aarch64
@@ -147,7 +149,6 @@ jobs:
           path: dist
           merge-multiple: true
       - name: Publish to PyPI
-        uses: PyO3/maturin-action@v1
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          command: upload
-          args: --non-interactive --skip-existing dist/*
+          packages-dir: dist/
