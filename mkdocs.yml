@@ -226,6 +226,7 @@ nav:
       - Database Setup: user-guide/rust/database.md
       - Graph Operations: user-guide/rust/operations.md
       - Sessions: user-guide/rust/sessions.md
+    - Transactions: user-guide/transactions.md
     - Persistence:
       - user-guide/persistence/index.md
       - In-Memory Mode: user-guide/persistence/in-memory.md
