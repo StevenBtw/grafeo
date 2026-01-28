@@ -383,7 +383,11 @@ impl<V: Clone + Send + Sync + 'static> PartitionedState<V> {
         }
 
         let partition = self.get_partition_mut(partition_idx)?;
-        Ok(&mut partition.get_mut(&serialized_key).unwrap().value)
+        // Invariant: key was either already present or inserted in the block above
+        Ok(&mut partition
+            .get_mut(&serialized_key)
+            .expect("key exists: just inserted or already present in partition")
+            .value)
     }
 
     /// Drains all entries from all partitions.

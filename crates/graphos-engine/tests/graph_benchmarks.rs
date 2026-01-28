@@ -4,6 +4,10 @@
 //! Tests insertion throughput, traversal performance, and query patterns.
 //!
 //! Run with: cargo test -p graphos-engine --release -- graph_benchmarks --nocapture
+//!
+//! Some heavy benchmarks are marked `#[ignore]` to keep default `cargo test` fast.
+//! To run all benchmarks including heavy ones:
+//!   cargo test -p graphos-engine --release -- graph_benchmarks --nocapture --include-ignored
 
 use std::time::{Duration, Instant};
 
@@ -67,6 +71,7 @@ fn print_header(section: &str) {
 // ============================================================================
 
 #[test]
+#[ignore = "heavy benchmark: 100K+ nodes in debug mode"]
 fn bench_bulk_node_insertion() {
     print_header("BULK NODE INSERTION BENCHMARKS");
 
@@ -130,6 +135,7 @@ fn bench_bulk_node_insertion() {
 // ============================================================================
 
 #[test]
+#[ignore = "heavy benchmark: bulk edge creation on 10K nodes"]
 fn bench_bulk_edge_insertion() {
     print_header("BULK EDGE INSERTION BENCHMARKS");
 
@@ -399,6 +405,7 @@ fn bench_filtering() {
 // ============================================================================
 
 #[test]
+#[ignore = "heavy benchmark: aggregations over 50K nodes"]
 fn bench_aggregations() {
     print_header("AGGREGATION BENCHMARKS");
 
@@ -569,6 +576,7 @@ fn bench_point_lookups() {
 // ============================================================================
 
 #[test]
+#[ignore = "heavy benchmark: dense graph pattern matching"]
 fn bench_pattern_matching() {
     print_header("PATTERN MATCHING BENCHMARKS");
 
@@ -649,6 +657,7 @@ fn bench_pattern_matching() {
 // ============================================================================
 
 #[test]
+#[ignore = "heavy benchmark: 10K mixed OLTP operations"]
 fn bench_mixed_workload() {
     print_header("MIXED WORKLOAD BENCHMARK (OLTP-like)");
 
@@ -842,6 +851,8 @@ fn bench_summary() {
     println!("  - Edge multiplier: {}x", EDGE_MULTIPLIER);
     println!("\n  Run individual benchmarks with:");
     println!("    cargo test -p graphos-engine --release -- bench_ --nocapture");
-    println!("\n  Run all benchmarks with:");
+    println!("\n  Run fast benchmarks only (default):");
     println!("    cargo test -p graphos-engine --release -- graph_benchmarks --nocapture");
+    println!("\n  Run ALL benchmarks including heavy ones:");
+    println!("    cargo test -p graphos-engine --release -- graph_benchmarks --nocapture --include-ignored");
 }

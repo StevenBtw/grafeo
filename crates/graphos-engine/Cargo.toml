@@ -52,3 +52,7 @@ full = ["gql", "cypher", "sparql", "gremlin", "graphql", "rdf"]
 
 [lints]
 workspace = true
+
+[[bench]]
+name = "query_bench"
+harness = false
