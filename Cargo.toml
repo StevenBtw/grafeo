@@ -10,7 +10,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.0.1"
+version = "0.1.1"
 edition = "2024"
 rust-version = "1.91.1"
 license = "Apache-2.0"
@@ -20,11 +20,11 @@ description = "A pure-Rust, high-performance, embeddable graph database"
 
 [workspace.dependencies]
 # Internal crates
-graphos-common = { path = "crates/graphos-common", version = "0.0.1" }
-graphos-core = { path = "crates/graphos-core", version = "0.0.1" }
-graphos-adapters = { path = "crates/graphos-adapters", version = "0.0.1" }
-graphos-engine = { path = "crates/graphos-engine", version = "0.0.1" }
-graphos = { path = "crates/graphos", version = "0.0.1" }
+graphos-common = { path = "crates/graphos-common", version = "0.1.1" }
+graphos-core = { path = "crates/graphos-core", version = "0.1.1" }
+graphos-adapters = { path = "crates/graphos-adapters", version = "0.1.1" }
+graphos-engine = { path = "crates/graphos-engine", version = "0.1.1" }
+graphos = { path = "crates/graphos", version = "0.1.1" }
 
 # Error handling
 thiserror = "2.0"

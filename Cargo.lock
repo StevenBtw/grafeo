@@ -451,7 +451,7 @@ dependencies = [
 
 [[package]]
 name = "graphos"
-version = "0.0.1"
+version = "0.1.1"
 dependencies = [
  "graphos-adapters",
  "graphos-common",
@@ -461,7 +461,7 @@ dependencies = [
 
 [[package]]
 name = "graphos-adapters"
-version = "0.0.1"
+version = "0.1.1"
 dependencies = [
  "bincode",
  "byteorder",
@@ -484,7 +484,7 @@ dependencies = [
 
 [[package]]
 name = "graphos-common"
-version = "0.0.1"
+version = "0.1.1"
 dependencies = [
  "ahash",
  "bincode",
@@ -503,7 +503,7 @@ dependencies = [
 
 [[package]]
 name = "graphos-core"
-version = "0.0.1"
+version = "0.1.1"
 dependencies = [
  "ahash",
  "byteorder",
@@ -525,7 +525,7 @@ dependencies = [
 
 [[package]]
 name = "graphos-engine"
-version = "0.0.1"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "criterion",
@@ -547,7 +547,7 @@ dependencies = [
 
 [[package]]
 name = "graphos-python"
-version = "0.0.1"
+version = "0.1.1"
 dependencies = [
  "graphos-adapters",
  "graphos-common",

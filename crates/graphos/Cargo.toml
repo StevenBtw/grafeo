@@ -9,10 +9,10 @@ keywords = ["graph", "database", "gql", "knowledge-graph", "embedded"]
 categories = ["database-implementations", "data-structures"]
 
 [dependencies]
-graphos-engine = { path = "../graphos-engine" }
-graphos-core = { path = "../graphos-core" }
-graphos-common = { path = "../graphos-common" }
-graphos-adapters = { path = "../graphos-adapters" }
+graphos-engine = { path = "../graphos-engine", version = "0.1.1" }
+graphos-core = { path = "../graphos-core", version = "0.1.1" }
+graphos-common = { path = "../graphos-common", version = "0.1.1" }
+graphos-adapters = { path = "../graphos-adapters", version = "0.1.1" }
 
 [features]
 default = ["gql"]
