@@ -1122,10 +1122,9 @@ mod tests {
 
     #[test]
     fn test_predicate_gt() {
-        let translator = GremlinTranslator::new();
         let expr = LogicalExpression::Variable("x".to_string());
         let pred = ast::Predicate::Gt(Value::Int64(10));
-        let result = translator.translate_predicate(&pred, expr).unwrap();
+        let result = GremlinTranslator::translate_predicate(&pred, expr).unwrap();
 
         if let LogicalExpression::Binary { op, .. } = result {
             assert_eq!(op, BinaryOp::Gt);
@@ -1136,10 +1135,9 @@ mod tests {
 
     #[test]
     fn test_predicate_within() {
-        let translator = GremlinTranslator::new();
         let expr = LogicalExpression::Variable("x".to_string());
         let pred = ast::Predicate::Within(vec![Value::Int64(1), Value::Int64(2)]);
-        let result = translator.translate_predicate(&pred, expr).unwrap();
+        let result = GremlinTranslator::translate_predicate(&pred, expr).unwrap();
 
         if let LogicalExpression::Binary { op, .. } = result {
             assert_eq!(op, BinaryOp::In);
@@ -1150,10 +1148,9 @@ mod tests {
 
     #[test]
     fn test_predicate_containing() {
-        let translator = GremlinTranslator::new();
         let expr = LogicalExpression::Variable("x".to_string());
         let pred = ast::Predicate::Containing("test".to_string());
-        let result = translator.translate_predicate(&pred, expr).unwrap();
+        let result = GremlinTranslator::translate_predicate(&pred, expr).unwrap();
 
         if let LogicalExpression::Binary { op, .. } = result {
             assert_eq!(op, BinaryOp::Contains);

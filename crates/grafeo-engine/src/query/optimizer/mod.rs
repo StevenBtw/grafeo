@@ -268,12 +268,12 @@ impl Optimizer {
     /// Collects all output variable names from an operator.
     fn collect_output_variables(&self, op: &LogicalOperator) -> HashSet<String> {
         let mut vars = HashSet::new();
-        self.collect_output_variables_recursive(op, &mut vars);
+        Self::collect_output_variables_recursive(op, &mut vars);
         vars
     }
 
     /// Recursively collects output variables from an operator.
-    fn collect_output_variables_recursive(&self, op: &LogicalOperator, vars: &mut HashSet<String>) {
+    fn collect_output_variables_recursive(op: &LogicalOperator, vars: &mut HashSet<String>) {
         match op {
             LogicalOperator::NodeScan(scan) => {
                 vars.insert(scan.variable.clone());
@@ -286,10 +286,10 @@ impl Optimizer {
                 if let Some(edge_var) = &expand.edge_variable {
                     vars.insert(edge_var.clone());
                 }
-                self.collect_output_variables_recursive(&expand.input, vars);
+                Self::collect_output_variables_recursive(&expand.input, vars);
             }
             LogicalOperator::Filter(filter) => {
-                self.collect_output_variables_recursive(&filter.input, vars);
+                Self::collect_output_variables_recursive(&filter.input, vars);
             }
             LogicalOperator::Project(proj) => {
                 for p in &proj.projections {
@@ -297,11 +297,11 @@ impl Optimizer {
                         vars.insert(alias.clone());
                     }
                 }
-                self.collect_output_variables_recursive(&proj.input, vars);
+                Self::collect_output_variables_recursive(&proj.input, vars);
             }
             LogicalOperator::Join(join) => {
-                self.collect_output_variables_recursive(&join.left, vars);
-                self.collect_output_variables_recursive(&join.right, vars);
+                Self::collect_output_variables_recursive(&join.left, vars);
+                Self::collect_output_variables_recursive(&join.right, vars);
             }
             LogicalOperator::Aggregate(agg) => {
                 for expr in &agg.group_by {
@@ -314,19 +314,19 @@ impl Optimizer {
                 }
             }
             LogicalOperator::Return(ret) => {
-                self.collect_output_variables_recursive(&ret.input, vars);
+                Self::collect_output_variables_recursive(&ret.input, vars);
             }
             LogicalOperator::Limit(limit) => {
-                self.collect_output_variables_recursive(&limit.input, vars);
+                Self::collect_output_variables_recursive(&limit.input, vars);
             }
             LogicalOperator::Skip(skip) => {
-                self.collect_output_variables_recursive(&skip.input, vars);
+                Self::collect_output_variables_recursive(&skip.input, vars);
             }
             LogicalOperator::Sort(sort) => {
-                self.collect_output_variables_recursive(&sort.input, vars);
+                Self::collect_output_variables_recursive(&sort.input, vars);
             }
             LogicalOperator::Distinct(distinct) => {
-                self.collect_output_variables_recursive(&distinct.input, vars);
+                Self::collect_output_variables_recursive(&distinct.input, vars);
             }
             _ => {}
         }
