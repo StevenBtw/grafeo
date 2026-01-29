@@ -1,21 +1,18 @@
-//! Storage utilities for graph data.
+//! Compression and encoding for graph property storage.
 //!
-//! This module provides compression and encoding utilities:
+//! Graph properties can take up a lot of space - especially string-heavy data like
+//! names and labels. This module provides several encoding strategies to shrink
+//! your data without losing information.
 //!
-//! - [`dictionary`] - Dictionary encoding for strings with low cardinality
-//! - [`delta`] - Delta encoding for sorted integer sequences
-//! - [`bitpack`] - Bit-packing for small integers
-//! - [`bitvec`] - Bit vector for boolean compression
-//! - [`codec`] - Unified compression codec interface
+//! | Data type | Best codec | Typical savings |
+//! | --------- | ---------- | --------------- |
+//! | Sorted integers (IDs, timestamps) | [`DeltaBitPacked`] | 5-20x smaller |
+//! | Small integers (ages, counts) | [`BitPackedInts`] | 2-16x smaller |
+//! | Repeated strings (labels, categories) | [`DictionaryEncoding`] | 2-50x smaller |
+//! | Booleans (flags, markers) | [`BitVector`] | 8x smaller |
 //!
-//! # Compression Strategies
-//!
-//! | Data Type | Recommended Codec | Compression Ratio |
-//! |-----------|-------------------|-------------------|
-//! | Sorted integers | DeltaBitPacked | 5-20x |
-//! | Small integers | BitPacked | 2-16x |
-//! | Strings (low cardinality) | Dictionary | 2-50x |
-//! | Booleans | BitVector | 8x |
+//! Use [`CodecSelector`] to automatically pick the best codec for your data,
+//! or choose manually when you know your data characteristics.
 //!
 //! # Example
 //!

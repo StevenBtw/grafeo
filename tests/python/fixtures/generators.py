@@ -159,12 +159,6 @@ class LDBCLikeGenerator(SyntheticDataGenerator):
 
     def generate(self) -> tuple[list[NodeData], list[EdgeData]]:
         """Generate the LDBC-like dataset."""
-        # Track indices for each type
-        person_start = 0
-        company_start = self.num_persons
-        university_start = company_start + self.num_companies
-        city_start = university_start + self.num_universities
-
         # Generate Cities
         cities = ["New York", "San Francisco", "London", "Berlin", "Tokyo",
                   "Sydney", "Toronto", "Paris", "Amsterdam", "Singapore",
@@ -218,27 +212,24 @@ class LDBCLikeGenerator(SyntheticDataGenerator):
                 }
             ))
 
-        # Reorder nodes: Person, Company, University, City
-        # Actually, let's keep them and use the correct indices
+        # Calculate base indices
+        # Cities: 0..num_cities
+        # Universities: num_cities..num_cities+num_universities
+        # Companies: num_cities+num_universities..num_cities+num_universities+num_companies
+        # Persons: num_cities+num_universities+num_companies..end
+        person_base = self.num_cities + self.num_universities + self.num_companies
 
         # Generate relationships
         # Person -[LIVES_IN]-> City
         for i in range(self.num_persons):
-            person_idx = city_start + self.num_cities + self.num_universities + self.num_companies + i
-            # Wait, let me recalculate. We added in order: City, University, Company, Person
-            # So: Cities: 0..num_cities
-            # Universities: num_cities..num_cities+num_universities
-            # Companies: num_cities+num_universities..num_cities+num_universities+num_companies
-            # Persons: num_cities+num_universities+num_companies..end
-
-            person_idx = self.num_cities + self.num_universities + self.num_companies + i
+            person_idx = person_base + i
             city_idx = self.rng.randint(0, self.num_cities - 1)
             self.edges.append(EdgeData(person_idx, city_idx, "LIVES_IN", {}))
 
         # Person -[WORKS_AT]-> Company (70% of persons work)
         for i in range(self.num_persons):
             if self.rng.random() < 0.7:
-                person_idx = self.num_cities + self.num_universities + self.num_companies + i
+                person_idx = person_base + i
                 company_idx = self.num_cities + self.num_universities + self.rng.randint(0, self.num_companies - 1)
                 self.edges.append(EdgeData(
                     person_idx, company_idx, "WORKS_AT",
@@ -248,7 +239,7 @@ class LDBCLikeGenerator(SyntheticDataGenerator):
         # Person -[STUDIED_AT]-> University (60% of persons studied)
         for i in range(self.num_persons):
             if self.rng.random() < 0.6:
-                person_idx = self.num_cities + self.num_universities + self.num_companies + i
+                person_idx = person_base + i
                 uni_idx = self.num_cities + self.rng.randint(0, self.num_universities - 1)
                 self.edges.append(EdgeData(
                     person_idx, uni_idx, "STUDIED_AT",
@@ -256,7 +247,6 @@ class LDBCLikeGenerator(SyntheticDataGenerator):
                 ))
 
         # Person -[KNOWS]-> Person (social connections)
-        person_base = self.num_cities + self.num_universities + self.num_companies
         existing_knows = set()
         target_knows = self.num_persons * 5  # Average 5 friends per person
 
@@ -441,31 +431,3 @@ def load_data_into_db(db, generator: SyntheticDataGenerator) -> tuple[int, int]:
         db.create_edge(src_id, dst_id, edge_data.edge_type, edge_data.properties)
 
     return len(nodes), len(edges)
-
-
-if __name__ == "__main__":
-    # Quick test of generators
-    print("Testing SocialNetworkGenerator...")
-    gen = SocialNetworkGenerator(num_nodes=100, avg_edges_per_node=5)
-    nodes, edges = gen.generate()
-    print(f"  Generated {len(nodes)} nodes and {len(edges)} edges")
-
-    print("\nTesting LDBCLikeGenerator...")
-    gen = LDBCLikeGenerator(scale_factor=0.1)
-    nodes, edges = gen.generate()
-    print(f"  Generated {len(nodes)} nodes and {len(edges)} edges")
-
-    print("\nTesting RandomGraphGenerator...")
-    gen = RandomGraphGenerator(num_nodes=100, edge_probability=0.05)
-    nodes, edges = gen.generate()
-    print(f"  Generated {len(nodes)} nodes and {len(edges)} edges")
-
-    print("\nTesting TreeGenerator...")
-    gen = TreeGenerator(depth=4, branching_factor=3)
-    nodes, edges = gen.generate()
-    print(f"  Generated {len(nodes)} nodes and {len(edges)} edges")
-
-    print("\nTesting CliqueGenerator...")
-    gen = CliqueGenerator(num_cliques=5, clique_size=5)
-    nodes, edges = gen.generate()
-    print(f"  Generated {len(nodes)} nodes and {len(edges)} edges")

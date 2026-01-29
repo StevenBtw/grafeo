@@ -1,8 +1,11 @@
-//! Property storage for the LPG model.
+//! Columnar property storage for nodes and edges.
 //!
-//! This module provides columnar property storage optimized for
-//! efficient scanning and filtering. Includes zone map support for
-//! predicate pushdown and data skipping.
+//! Properties are stored column-wise (all "name" values together, all "age"
+//! values together) rather than row-wise. This makes filtering fast - to find
+//! all nodes where age > 30, we only scan the age column.
+//!
+//! Each column also maintains a zone map (min/max/null_count) enabling the
+//! query optimizer to skip columns entirely when a predicate can't match.
 
 use crate::index::zone_map::ZoneMapEntry;
 use grafeo_common::types::{EdgeId, NodeId, PropertyKey, Value};
@@ -12,7 +15,9 @@ use std::cmp::Ordering;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-/// Comparison operator for zone map predicate checks.
+/// Comparison operators used for zone map predicate checks.
+///
+/// These map directly to GQL comparison operators like `=`, `<`, `>=`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompareOp {
     /// Equal to value.
@@ -29,19 +34,38 @@ pub enum CompareOp {
     Ge,
 }
 
-/// Trait for entity IDs that can be used as property storage keys.
+/// Marker trait for IDs that can key into property storage.
+///
+/// Implemented for [`NodeId`] and [`EdgeId`] - you can store properties on both.
 pub trait EntityId: Copy + Eq + Hash + 'static {}
 
 impl EntityId for NodeId {}
 impl EntityId for EdgeId {}
 
-/// Columnar property storage.
+/// Thread-safe columnar property storage.
 ///
-/// Properties are stored in a columnar format where each property key
-/// has its own column. This enables efficient filtering and scanning
-/// of specific properties across many entities.
+/// Each property key ("name", "age", etc.) gets its own column. This layout
+/// is great for analytical queries that filter on specific properties -
+/// you only touch the columns you need.
 ///
-/// Generic over the entity ID type (NodeId or EdgeId).
+/// Generic over `Id` so the same storage works for nodes and edges.
+///
+/// # Example
+///
+/// ```
+/// use grafeo_core::graph::lpg::PropertyStorage;
+/// use grafeo_common::types::{NodeId, PropertyKey};
+///
+/// let storage = PropertyStorage::new();
+/// let alice = NodeId::new(1);
+///
+/// storage.set(alice, PropertyKey::new("name"), "Alice".into());
+/// storage.set(alice, PropertyKey::new("age"), 30i64.into());
+///
+/// // Fetch all properties at once
+/// let props = storage.get_all(alice);
+/// assert_eq!(props.len(), 2);
+/// ```
 pub struct PropertyStorage<Id: EntityId = NodeId> {
     /// Map from property key to column.
     columns: RwLock<FxHashMap<PropertyKey, PropertyColumn<Id>>>,
@@ -128,10 +152,11 @@ impl<Id: EntityId> PropertyStorage<Id> {
         }
     }
 
-    /// Checks if a predicate on a property might match any values.
+    /// Checks if a predicate might match any values (using zone maps).
     ///
-    /// Returns `true` if the property column might contain matching values,
-    /// `false` if it definitely doesn't. Returns `true` if the property doesn't exist.
+    /// Returns `false` only when we're *certain* no values match - for example,
+    /// if you're looking for age > 100 but the max age is 80. Returns `true`
+    /// if the property doesn't exist (conservative - might match).
     #[must_use]
     pub fn might_match(&self, key: &PropertyKey, op: CompareOp, value: &Value) -> bool {
         let columns = self.columns.read();
@@ -163,10 +188,11 @@ impl<Id: EntityId> Default for PropertyStorage<Id> {
     }
 }
 
-/// A single property column with zone map tracking.
+/// A single property column (e.g., all "age" values).
 ///
-/// Stores values for a specific property key across all entities.
-/// Maintains zone map metadata (min/max/null_count) for predicate pushdown.
+/// Maintains min/max/null_count for fast predicate evaluation. When you
+/// filter on `age > 50`, we first check if any age could possibly match
+/// before scanning the actual values.
 pub struct PropertyColumn<Id: EntityId = NodeId> {
     /// Sparse storage: entity ID -> value.
     /// For dense properties, this could be optimized to a flat vector.
@@ -267,10 +293,10 @@ impl<Id: EntityId> PropertyColumn<Id> {
         &self.zone_map
     }
 
-    /// Checks if a predicate might match any values in this column.
+    /// Uses zone map to check if any values could satisfy the predicate.
     ///
-    /// Returns `true` if the column might contain matching values,
-    /// `false` if it definitely doesn't (allowing the column to be skipped).
+    /// Returns `false` when we can prove no values match (so the column
+    /// can be skipped entirely). Returns `true` if values might match.
     #[must_use]
     pub fn might_match(&self, op: CompareOp, value: &Value) -> bool {
         if self.zone_map_dirty {
@@ -355,7 +381,9 @@ impl<Id: EntityId> Default for PropertyColumn<Id> {
     }
 }
 
-/// A reference to a property column for bulk access.
+/// A borrowed reference to a property column for bulk reads.
+///
+/// Holds the read lock so the column can't change while you're iterating.
 pub struct PropertyColumnRef<'a, Id: EntityId = NodeId> {
     _guard: parking_lot::RwLockReadGuard<'a, FxHashMap<PropertyKey, PropertyColumn<Id>>>,
     #[allow(dead_code)]

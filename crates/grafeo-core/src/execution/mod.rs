@@ -1,16 +1,20 @@
-//! Execution primitives for vectorized query processing.
+//! Vectorized query execution engine.
 //!
-//! This module provides the core data structures for vectorized execution:
+//! Grafeo uses vectorized processing - instead of one row at a time, we process
+//! batches of ~1024 rows. This unlocks SIMD and keeps the CPU busy.
 //!
-//! - [`chunk`] - DataChunk for batched tuple processing
-//! - [`vector`] - ValueVector for columnar storage
-//! - [`selection`] - SelectionVector for filtering
-//! - [`operators`] - Physical operators (scan, filter, project, join)
-//! - [`pipeline`] - Push-based execution pipeline
-//! - [`sink`] - Common sink implementations
-//! - [`memory`] - Memory-aware execution context
-//! - [`parallel`] - Morsel-driven parallel execution
-//! - [`spill`] - Transparent spilling for out-of-core processing
+//! | Module | Purpose |
+//! | ------ | ------- |
+//! | [`chunk`] | Batched rows (DataChunk = multiple columns) |
+//! | [`vector`] | Single column of values |
+//! | [`selection`] | Bitmap for filtering without copying |
+//! | [`operators`] | Physical operators (scan, filter, join, etc.) |
+//! | [`pipeline`] | Push-based execution (data flows through operators) |
+//! | [`parallel`] | Morsel-driven parallelism |
+//! | [`spill`] | Disk spilling when memory is tight |
+//!
+//! The execution model is push-based: sources push data through a pipeline of
+//! operators until it reaches a sink.
 
 pub mod chunk;
 pub mod memory;

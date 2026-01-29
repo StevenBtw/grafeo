@@ -107,6 +107,34 @@ pub enum LogicalOperator {
 
     /// Find shortest path between nodes.
     ShortestPath(ShortestPathOp),
+
+    // ==================== SPARQL Update Operators ====================
+    /// Insert RDF triples.
+    InsertTriple(InsertTripleOp),
+
+    /// Delete RDF triples.
+    DeleteTriple(DeleteTripleOp),
+
+    /// Clear a graph (remove all triples).
+    ClearGraph(ClearGraphOp),
+
+    /// Create a new named graph.
+    CreateGraph(CreateGraphOp),
+
+    /// Drop (remove) a named graph.
+    DropGraph(DropGraphOp),
+
+    /// Load data from a URL into a graph.
+    LoadGraph(LoadGraphOp),
+
+    /// Copy triples from one graph to another.
+    CopyGraph(CopyGraphOp),
+
+    /// Move triples from one graph to another.
+    MoveGraph(MoveGraphOp),
+
+    /// Add (merge) triples from one graph to another.
+    AddGraph(AddGraphOp),
 }
 
 /// Scan nodes from the graph.
@@ -530,6 +558,109 @@ pub struct ShortestPathOp {
     pub path_alias: String,
     /// Whether to find all shortest paths (vs. just one).
     pub all_paths: bool,
+}
+
+// ==================== SPARQL Update Operators ====================
+
+/// Insert RDF triples.
+#[derive(Debug, Clone)]
+pub struct InsertTripleOp {
+    /// Subject of the triple.
+    pub subject: TripleComponent,
+    /// Predicate of the triple.
+    pub predicate: TripleComponent,
+    /// Object of the triple.
+    pub object: TripleComponent,
+    /// Named graph (optional).
+    pub graph: Option<String>,
+    /// Input operator (provides variable bindings).
+    pub input: Option<Box<LogicalOperator>>,
+}
+
+/// Delete RDF triples.
+#[derive(Debug, Clone)]
+pub struct DeleteTripleOp {
+    /// Subject pattern.
+    pub subject: TripleComponent,
+    /// Predicate pattern.
+    pub predicate: TripleComponent,
+    /// Object pattern.
+    pub object: TripleComponent,
+    /// Named graph (optional).
+    pub graph: Option<String>,
+    /// Input operator (provides variable bindings).
+    pub input: Option<Box<LogicalOperator>>,
+}
+
+/// Clear all triples from a graph.
+#[derive(Debug, Clone)]
+pub struct ClearGraphOp {
+    /// Target graph (None = default graph, Some("") = all named, Some(iri) = specific graph).
+    pub graph: Option<String>,
+    /// Whether to silently ignore errors.
+    pub silent: bool,
+}
+
+/// Create a new named graph.
+#[derive(Debug, Clone)]
+pub struct CreateGraphOp {
+    /// IRI of the graph to create.
+    pub graph: String,
+    /// Whether to silently ignore if graph already exists.
+    pub silent: bool,
+}
+
+/// Drop (remove) a named graph.
+#[derive(Debug, Clone)]
+pub struct DropGraphOp {
+    /// Target graph (None = default graph).
+    pub graph: Option<String>,
+    /// Whether to silently ignore errors.
+    pub silent: bool,
+}
+
+/// Load data from a URL into a graph.
+#[derive(Debug, Clone)]
+pub struct LoadGraphOp {
+    /// Source URL to load data from.
+    pub source: String,
+    /// Destination graph (None = default graph).
+    pub destination: Option<String>,
+    /// Whether to silently ignore errors.
+    pub silent: bool,
+}
+
+/// Copy triples from one graph to another.
+#[derive(Debug, Clone)]
+pub struct CopyGraphOp {
+    /// Source graph.
+    pub source: Option<String>,
+    /// Destination graph.
+    pub destination: Option<String>,
+    /// Whether to silently ignore errors.
+    pub silent: bool,
+}
+
+/// Move triples from one graph to another.
+#[derive(Debug, Clone)]
+pub struct MoveGraphOp {
+    /// Source graph.
+    pub source: Option<String>,
+    /// Destination graph.
+    pub destination: Option<String>,
+    /// Whether to silently ignore errors.
+    pub silent: bool,
+}
+
+/// Add (merge) triples from one graph to another.
+#[derive(Debug, Clone)]
+pub struct AddGraphOp {
+    /// Source graph.
+    pub source: Option<String>,
+    /// Destination graph.
+    pub destination: Option<String>,
+    /// Whether to silently ignore errors.
+    pub silent: bool,
 }
 
 /// Return results (terminal operator).

@@ -3,9 +3,10 @@
 //! Translates Gremlin AST to the common logical plan representation.
 
 use crate::query::plan::{
-    AggregateExpr, AggregateFunction, AggregateOp, BinaryOp, CreateNodeOp, DeleteNodeOp,
-    DistinctOp, ExpandDirection, ExpandOp, FilterOp, LimitOp, LogicalExpression, LogicalOperator,
-    LogicalPlan, NodeScanOp, ReturnItem, ReturnOp, SkipOp, SortKey, SortOp, SortOrder, UnaryOp,
+    AggregateExpr, AggregateFunction, AggregateOp, BinaryOp, CreateEdgeOp, CreateNodeOp,
+    DeleteNodeOp, DistinctOp, ExpandDirection, ExpandOp, FilterOp, LimitOp, LogicalExpression,
+    LogicalOperator, LogicalPlan, NodeScanOp, ReturnItem, ReturnOp, SetPropertyOp, SkipOp, SortKey,
+    SortOp, SortOrder, UnaryOp,
 };
 use grafeo_adapters::query::gremlin::{self, ast};
 use grafeo_common::types::Value;
@@ -29,6 +30,14 @@ struct GremlinTranslator {
     var_counter: AtomicU32,
 }
 
+/// Context for building an edge during traversal processing.
+struct PendingEdge {
+    edge_type: String,
+    from_var: Option<String>,
+    to_var: Option<String>,
+    properties: Vec<(String, LogicalExpression)>,
+}
+
 impl GremlinTranslator {
     fn new() -> Self {
         Self {
@@ -37,18 +46,104 @@ impl GremlinTranslator {
     }
 
     fn translate_statement(&self, stmt: &ast::Statement) -> Result<LogicalPlan> {
+        // Special handling for addE source - need to collect from/to/property steps
+        if let ast::TraversalSource::AddE(edge_type) = &stmt.source {
+            return self.translate_add_edge_traversal(edge_type, &stmt.steps);
+        }
+
         // Start with the source
         let mut plan = self.translate_source(&stmt.source)?;
 
         // Track current variable for property access
         let mut current_var = self.get_current_var(&stmt.source);
 
+        // Track edge context for step-level addE
+        let mut pending_edge: Option<PendingEdge> = None;
+
         // Process each step
         for step in &stmt.steps {
+            // Handle edge creation steps specially
+            if let Some(ref mut edge) = pending_edge {
+                match step {
+                    ast::Step::From(from_to) => {
+                        edge.from_var = Some(self.extract_from_to_var(from_to)?);
+                        continue;
+                    }
+                    ast::Step::To(from_to) => {
+                        edge.to_var = Some(self.extract_from_to_var(from_to)?);
+                        // If we have both from and to, create the edge
+                        if edge.from_var.is_some() && edge.to_var.is_some() {
+                            let edge_var = self.next_var();
+                            plan = LogicalOperator::CreateEdge(CreateEdgeOp {
+                                variable: Some(edge_var.clone()),
+                                from_variable: edge.from_var.take().unwrap(),
+                                to_variable: edge.to_var.take().unwrap(),
+                                edge_type: edge.edge_type.clone(),
+                                properties: std::mem::take(&mut edge.properties),
+                                input: Box::new(plan),
+                            });
+                            current_var = edge_var;
+                            pending_edge = None;
+                        }
+                        continue;
+                    }
+                    ast::Step::Property(prop_step) => {
+                        edge.properties.push((
+                            prop_step.key.clone(),
+                            LogicalExpression::Literal(prop_step.value.clone()),
+                        ));
+                        continue;
+                    }
+                    _ => {
+                        // Non-edge step encountered, finalize edge if possible
+                        if edge.from_var.is_some() && edge.to_var.is_some() {
+                            let edge_var = self.next_var();
+                            plan = LogicalOperator::CreateEdge(CreateEdgeOp {
+                                variable: Some(edge_var.clone()),
+                                from_variable: edge.from_var.take().unwrap(),
+                                to_variable: edge.to_var.take().unwrap(),
+                                edge_type: edge.edge_type.clone(),
+                                properties: std::mem::take(&mut edge.properties),
+                                input: Box::new(plan),
+                            });
+                            current_var = edge_var;
+                            pending_edge = None;
+                        }
+                    }
+                }
+            }
+
+            // Check if this is a step-level addE
+            if let ast::Step::AddE(edge_type) = step {
+                pending_edge = Some(PendingEdge {
+                    edge_type: edge_type.clone(),
+                    from_var: None,
+                    to_var: None,
+                    properties: Vec::new(),
+                });
+                continue;
+            }
+
             let (new_plan, new_var) = self.translate_step(step, plan, &current_var)?;
             plan = new_plan;
             if let Some(v) = new_var {
                 current_var = v;
+            }
+        }
+
+        // Finalize any pending edge
+        if let Some(edge) = pending_edge {
+            if let (Some(from_var), Some(to_var)) = (edge.from_var, edge.to_var) {
+                let edge_var = self.next_var();
+                plan = LogicalOperator::CreateEdge(CreateEdgeOp {
+                    variable: Some(edge_var.clone()),
+                    from_variable: from_var,
+                    to_variable: to_var,
+                    edge_type: edge.edge_type,
+                    properties: edge.properties,
+                    input: Box::new(plan),
+                });
+                current_var = edge_var;
             }
         }
 
@@ -65,6 +160,85 @@ impl GremlinTranslator {
         }
 
         Ok(LogicalPlan::new(plan))
+    }
+
+    /// Handle g.addE('type').from(...).to(...) pattern
+    fn translate_add_edge_traversal(
+        &self,
+        edge_type: &str,
+        steps: &[ast::Step],
+    ) -> Result<LogicalPlan> {
+        let mut from_var: Option<String> = None;
+        let mut to_var: Option<String> = None;
+        let mut properties: Vec<(String, LogicalExpression)> = Vec::new();
+
+        for step in steps {
+            match step {
+                ast::Step::From(from_to) => {
+                    from_var = Some(self.extract_from_to_var(from_to)?);
+                }
+                ast::Step::To(from_to) => {
+                    to_var = Some(self.extract_from_to_var(from_to)?);
+                }
+                ast::Step::Property(prop_step) => {
+                    properties.push((
+                        prop_step.key.clone(),
+                        LogicalExpression::Literal(prop_step.value.clone()),
+                    ));
+                }
+                _ => {
+                    // Ignore other steps for now
+                }
+            }
+        }
+
+        let from_var =
+            from_var.ok_or_else(|| Error::Internal("addE requires from() step".to_string()))?;
+        let to_var =
+            to_var.ok_or_else(|| Error::Internal("addE requires to() step".to_string()))?;
+
+        // Create a scan to establish context, then create edge
+        let scan_var = self.next_var();
+        let scan = LogicalOperator::NodeScan(NodeScanOp {
+            variable: scan_var,
+            label: None,
+            input: None,
+        });
+
+        let edge_var = self.next_var();
+        let create_edge = LogicalOperator::CreateEdge(CreateEdgeOp {
+            variable: Some(edge_var.clone()),
+            from_variable: from_var,
+            to_variable: to_var,
+            edge_type: edge_type.to_string(),
+            properties,
+            input: Box::new(scan),
+        });
+
+        let plan = LogicalOperator::Return(ReturnOp {
+            items: vec![ReturnItem {
+                expression: LogicalExpression::Variable(edge_var),
+                alias: None,
+            }],
+            distinct: false,
+            input: Box::new(create_edge),
+        });
+
+        Ok(LogicalPlan::new(plan))
+    }
+
+    /// Extract variable name from FromTo specification
+    fn extract_from_to_var(&self, from_to: &ast::FromTo) -> Result<String> {
+        match from_to {
+            ast::FromTo::Label(label) => Ok(label.clone()),
+            ast::FromTo::Traversal(_steps) => {
+                // For traversal-based from/to, we'd need to execute the traversal
+                // For now, return an error suggesting label-based approach
+                Err(Error::Internal(
+                    "Traversal-based from()/to() not yet supported. Use label references like from('a').to('b')".to_string(),
+                ))
+            }
+        }
     }
 
     fn translate_source(&self, source: &ast::TraversalSource) -> Result<LogicalOperator> {
@@ -505,9 +679,32 @@ impl GremlinTranslator {
                 // In LogicalPlan, we use the label as an alias
                 Ok((input, Some(label.clone())))
             }
-            ast::Step::Property(_prop_step) => {
-                // TODO: Translate property setting to SetPropertyOp
-                Ok((input, None))
+            ast::Step::Property(prop_step) => {
+                // If setting property on a node being created, add to CreateNodeOp
+                // Otherwise, use SetPropertyOp
+                match input {
+                    LogicalOperator::CreateNode(mut create_op) => {
+                        // Add property to the CreateNodeOp
+                        create_op.properties.push((
+                            prop_step.key.clone(),
+                            LogicalExpression::Literal(prop_step.value.clone()),
+                        ));
+                        Ok((LogicalOperator::CreateNode(create_op), None))
+                    }
+                    _ => {
+                        // Use SetPropertyOp for existing nodes
+                        let plan = LogicalOperator::SetProperty(SetPropertyOp {
+                            variable: current_var.to_string(),
+                            properties: vec![(
+                                prop_step.key.clone(),
+                                LogicalExpression::Literal(prop_step.value.clone()),
+                            )],
+                            replace: false,
+                            input: Box::new(input),
+                        });
+                        Ok((plan, None))
+                    }
+                }
             }
             ast::Step::Drop => {
                 // Delete the current element
@@ -528,10 +725,9 @@ impl GremlinTranslator {
                 Ok((plan, Some(var)))
             }
             ast::Step::AddE(_label) => {
-                // AddE needs from/to context
-                Err(Error::Internal(
-                    "addE requires from() and to() context".to_string(),
-                ))
+                // AddE is handled specially in translate_statement with from/to context
+                // If we reach here, it means the step was processed outside the normal flow
+                Ok((input, None))
             }
 
             // Steps not fully supported
@@ -1097,6 +1293,104 @@ mod tests {
         }
 
         assert!(find_delete(&plan.root));
+    }
+
+    #[test]
+    fn test_translate_add_v_with_property() {
+        let result = translate("g.addV('Person').property('name', 'Alice')");
+        assert!(result.is_ok());
+        let plan = result.unwrap();
+
+        fn find_create(op: &LogicalOperator) -> Option<&CreateNodeOp> {
+            match op {
+                LogicalOperator::CreateNode(c) => Some(c),
+                LogicalOperator::Return(r) => find_create(&r.input),
+                _ => None,
+            }
+        }
+
+        let create = find_create(&plan.root).expect("Expected CreateNode");
+        assert_eq!(create.labels, vec!["Person".to_string()]);
+        assert_eq!(create.properties.len(), 1);
+        assert_eq!(create.properties[0].0, "name");
+    }
+
+    #[test]
+    fn test_translate_add_v_with_multiple_properties() {
+        let result = translate("g.addV('Person').property('name', 'Alice').property('age', 30)");
+        assert!(result.is_ok());
+        let plan = result.unwrap();
+
+        fn find_create(op: &LogicalOperator) -> Option<&CreateNodeOp> {
+            match op {
+                LogicalOperator::CreateNode(c) => Some(c),
+                LogicalOperator::Return(r) => find_create(&r.input),
+                _ => None,
+            }
+        }
+
+        let create = find_create(&plan.root).expect("Expected CreateNode");
+        assert_eq!(create.labels, vec!["Person".to_string()]);
+        assert_eq!(create.properties.len(), 2);
+    }
+
+    #[test]
+    fn test_translate_property_on_existing_node() {
+        // property() on an existing node should create SetPropertyOp
+        let result = translate("g.V().has('name', 'Alice').property('updated', true)");
+        assert!(result.is_ok());
+        let plan = result.unwrap();
+
+        fn find_set_property(op: &LogicalOperator) -> bool {
+            match op {
+                LogicalOperator::SetProperty(_) => true,
+                LogicalOperator::Return(r) => find_set_property(&r.input),
+                LogicalOperator::Filter(f) => find_set_property(&f.input),
+                _ => false,
+            }
+        }
+
+        assert!(find_set_property(&plan.root));
+    }
+
+    #[test]
+    fn test_translate_add_e_with_from_to() {
+        let result = translate("g.addE('knows').from('a').to('b')");
+        assert!(result.is_ok());
+        let plan = result.unwrap();
+
+        fn find_create_edge(op: &LogicalOperator) -> Option<&CreateEdgeOp> {
+            match op {
+                LogicalOperator::CreateEdge(e) => Some(e),
+                LogicalOperator::Return(r) => find_create_edge(&r.input),
+                _ => None,
+            }
+        }
+
+        let edge = find_create_edge(&plan.root).expect("Expected CreateEdge");
+        assert_eq!(edge.edge_type, "knows");
+        assert_eq!(edge.from_variable, "a");
+        assert_eq!(edge.to_variable, "b");
+    }
+
+    #[test]
+    fn test_translate_add_e_with_properties() {
+        let result = translate("g.addE('knows').from('a').to('b').property('since', 2020)");
+        assert!(result.is_ok());
+        let plan = result.unwrap();
+
+        fn find_create_edge(op: &LogicalOperator) -> Option<&CreateEdgeOp> {
+            match op {
+                LogicalOperator::CreateEdge(e) => Some(e),
+                LogicalOperator::Return(r) => find_create_edge(&r.input),
+                _ => None,
+            }
+        }
+
+        let edge = find_create_edge(&plan.root).expect("Expected CreateEdge");
+        assert_eq!(edge.edge_type, "knows");
+        assert_eq!(edge.properties.len(), 1);
+        assert_eq!(edge.properties[0].0, "since");
     }
 
     // === Order Tests ===

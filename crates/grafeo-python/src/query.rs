@@ -1,4 +1,4 @@
-//! Python query interface.
+//! Query results and builders for the Python API.
 
 use std::collections::HashMap;
 
@@ -9,7 +9,11 @@ use grafeo_common::types::Value;
 use crate::graph::{PyEdge, PyNode};
 use crate::types::PyValue;
 
-/// Query result wrapper.
+/// Results from a GQL query - iterate rows or access nodes and edges directly.
+///
+/// Iterate with `for row in result:` where each row is a dict. Or use
+/// `result.nodes()` and `result.edges()` to get graph elements. For single
+/// values, `result.scalar()` grabs the first column of the first row.
 #[pyclass(name = "QueryResult")]
 pub struct PyQueryResult {
     pub(crate) columns: Vec<String>,
@@ -130,7 +134,7 @@ impl PyQueryResult {
 }
 
 impl PyQueryResult {
-    /// Create a new query result.
+    /// Creates a new query result (used internally).
     pub fn new(
         columns: Vec<String>,
         rows: Vec<Vec<Value>>,
@@ -146,7 +150,7 @@ impl PyQueryResult {
         }
     }
 
-    /// Create an empty result.
+    /// Creates an empty result (used internally).
     pub fn empty() -> Self {
         Self {
             columns: Vec::new(),
@@ -158,7 +162,10 @@ impl PyQueryResult {
     }
 }
 
-/// Query builder for fluent API.
+/// Builds parameterized queries with a fluent API.
+///
+/// Add parameters with `.param("name", value)` to safely inject values
+/// without string concatenation (prevents injection).
 #[pyclass(name = "QueryBuilder")]
 pub struct PyQueryBuilder {
     pub(crate) query: String,
@@ -166,7 +173,7 @@ pub struct PyQueryBuilder {
 }
 
 impl PyQueryBuilder {
-    /// Create a new query builder (Rust API).
+    /// Creates a new query builder (Rust API).
     pub fn create(query: String) -> Self {
         Self {
             query,

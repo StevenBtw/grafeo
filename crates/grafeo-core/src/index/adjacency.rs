@@ -1,10 +1,12 @@
-//! Chunked adjacency lists with delta buffers.
+//! Chunked adjacency lists - the core data structure for graph traversal.
 //!
-//! This is the primary edge storage structure, optimized for:
-//! - O(1) amortized edge insertion
-//! - Cache-friendly sequential scans
-//! - MVCC-compatible copy-on-write at chunk granularity
-//! - Optional backward adjacency for incoming edge queries
+//! Every graph database needs fast neighbor lookups. This implementation uses
+//! chunked storage with delta buffers, giving you:
+//!
+//! - **O(1) amortized inserts** - new edges go into a delta buffer
+//! - **Cache-friendly scans** - chunks are sized for L1/L2 cache
+//! - **Soft deletes** - deletions don't require recompaction
+//! - **Concurrent reads** - RwLock allows many simultaneous traversals
 
 use grafeo_common::types::{EdgeId, NodeId};
 use grafeo_common::utils::hash::{FxHashMap, FxHashSet};
@@ -151,11 +153,29 @@ impl AdjacencyList {
     }
 }
 
-/// Chunked adjacency lists with delta buffers.
+/// The main structure for traversing graph edges.
 ///
-/// This is the primary structure for storing edge connectivity.
-/// It supports efficient insertion, deletion (via tombstones),
-/// and sequential scanning.
+/// Given a node, this tells you all its neighbors and the edges connecting them.
+/// Internally uses chunked storage (64 edges per chunk) with a delta buffer for
+/// recent inserts. Deletions are soft (tombstones) until compaction.
+///
+/// # Example
+///
+/// ```
+/// use grafeo_core::index::ChunkedAdjacency;
+/// use grafeo_common::types::{NodeId, EdgeId};
+///
+/// let adj = ChunkedAdjacency::new();
+///
+/// // Build a star graph: node 0 connects to nodes 1, 2, 3
+/// adj.add_edge(NodeId::new(0), NodeId::new(1), EdgeId::new(100));
+/// adj.add_edge(NodeId::new(0), NodeId::new(2), EdgeId::new(101));
+/// adj.add_edge(NodeId::new(0), NodeId::new(3), EdgeId::new(102));
+///
+/// // Fast neighbor lookup
+/// let neighbors = adj.neighbors(NodeId::new(0));
+/// assert_eq!(neighbors.len(), 3);
+/// ```
 pub struct ChunkedAdjacency {
     /// Adjacency lists indexed by source node.
     lists: RwLock<FxHashMap<NodeId, AdjacencyList>>,

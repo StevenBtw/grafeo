@@ -1,8 +1,9 @@
-//! solvOR-compatible adapter for Grafeo.
+//! Bridge to the [solvOR](https://pypi.org/project/solvor/) Python library style.
 //!
-//! This module provides an adapter that exposes Grafeo algorithms
-//! with a solvOR-compatible API focused on Operations Research style
-//! graph optimization problems.
+//! solvOR is a Python library for Operations Research algorithms. This adapter
+//! provides a compatible API for classic OR problems - shortest paths, network
+//! flow, minimum spanning trees. Results come back in OR-friendly formats
+//! (distances with paths, flows with edge assignments).
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -16,21 +17,22 @@ use grafeo_engine::database::GrafeoDB;
 
 use crate::error::PyGrafeoError;
 
-/// solvOR-compatible adapter for Grafeo.
+/// Solve classic OR problems on your graph.
 ///
-/// Provides Operations Research style graph algorithms with a solvOR-compatible API.
+/// Get this via `db.as_solvor()`. Algorithms return results in OR-friendly
+/// formats - distances with paths, flows with edge assignments, etc.
 ///
-/// Usage:
 /// ```python
-/// db = grafeo.GrafeoDB()
-/// # ... populate graph ...
-///
-/// # Get solvOR adapter
 /// solvor = db.as_solvor()
 ///
-/// # Use solvOR-style algorithms
-/// distance, path = solvor.shortest_path(source=1, target=5)
-/// flow, edges = solvor.max_flow(source=1, sink=10)
+/// # Shortest paths
+/// dist, path = solvor.shortest_path(1, 5)
+///
+/// # Network flow
+/// result = solvor.max_flow(source=1, sink=10)
+/// print(f"Max flow: {result['max_flow']}")
+///
+/// # Minimum spanning tree
 /// mst = solvor.minimum_spanning_tree()
 /// ```
 #[pyclass(name = "SolvORAdapter")]

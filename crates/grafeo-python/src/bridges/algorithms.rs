@@ -1,7 +1,8 @@
-//! Python bindings for Grafeo algorithms.
+//! Run graph algorithms directly from Python with Rust performance.
 //!
-//! Exposes the Rust algorithm implementations to Python with
-//! a clean, Pythonic API.
+//! Access via `db.algorithms` - all the classic algorithms are here:
+//! traversals, shortest paths, centrality measures, community detection,
+//! spanning trees, and network flow.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -16,10 +17,11 @@ use grafeo_engine::database::GrafeoDB;
 
 use crate::error::PyGrafeoError;
 
-/// Python algorithms interface.
+/// Run graph algorithms at Rust speed from Python.
 ///
-/// Provides access to all Grafeo graph algorithms through a unified API.
-/// Accessible via `db.algorithms` property.
+/// Get this via `db.algorithms`. All algorithms run directly on the Rust
+/// graph store - no copying to Python data structures. Results come back
+/// as Python dicts and lists.
 #[pyclass(name = "Algorithms")]
 pub struct PyAlgorithms {
     db: Arc<RwLock<GrafeoDB>>,

@@ -1,17 +1,16 @@
-//! Unified compression codec enumeration.
+//! Automatic codec selection and compression.
 //!
-//! Provides a unified interface for selecting and using compression codecs
-//! based on data type and characteristics.
+//! Don't want to think about which codec to use? [`CodecSelector`] analyzes
+//! your data and picks the best one. Or use [`TypeSpecificCompressor`] to
+//! compress and decompress with a single call.
 //!
-//! # Supported Codecs
-//!
-//! | Codec | Best For | Compression |
-//! |-------|----------|-------------|
-//! | None | Small data, random access | 1x |
+//! | Codec | Best for | Typical savings |
+//! | ----- | -------- | --------------- |
+//! | None | Small data, random access | 1x (no compression) |
 //! | Delta | Sorted integers | 2-10x |
-//! | DeltaBitPacked | Sorted integers with small deltas | 5-20x |
-//! | BitPacked | Small integers | 2-16x |
-//! | Dictionary | Strings with low cardinality | 2-50x |
+//! | DeltaBitPacked | Sequential IDs, timestamps | 5-20x |
+//! | BitPacked | Small integers (ages, counts) | 2-16x |
+//! | Dictionary | Repeated strings (labels) | 2-50x |
 //! | BitVector | Booleans | 8x |
 //! | RunLength | Highly repetitive data | 2-100x |
 
@@ -20,7 +19,7 @@ use std::io;
 use super::bitpack::{BitPackedInts, DeltaBitPacked};
 use super::bitvec::BitVector;
 
-/// Compression codec identifier.
+/// Identifies which compression algorithm was used on a chunk of data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CompressionCodec {
     /// No compression (raw values).
@@ -74,9 +73,10 @@ impl CompressionCodec {
     }
 }
 
-/// Compressed data container.
+/// A compressed chunk of data with everything needed to decompress it.
 ///
-/// Holds compressed data along with metadata needed for decompression.
+/// Check [`compression_ratio()`](Self::compression_ratio) to see how much
+/// space you're saving.
 #[derive(Debug, Clone)]
 pub struct CompressedData {
     /// The codec used for compression.
@@ -151,7 +151,11 @@ impl CompressedData {
     }
 }
 
-/// Automatic codec selection based on data characteristics.
+/// Analyzes your data and picks the best compression codec.
+///
+/// Don't want to think about compression? Call [`select_for_integers()`](Self::select_for_integers)
+/// or [`select_for_strings()`](Self::select_for_strings) and we'll examine your data
+/// to pick the codec with the best compression ratio.
 pub struct CodecSelector;
 
 impl CodecSelector {
@@ -217,7 +221,10 @@ impl CodecSelector {
     }
 }
 
-/// Compressor that handles all supported data types.
+/// One-stop compression - picks the codec and compresses in a single call.
+///
+/// Use this when you just want to compress your data without worrying about
+/// which codec to use. It picks the best codec automatically.
 pub struct TypeSpecificCompressor;
 
 impl TypeSpecificCompressor {

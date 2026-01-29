@@ -1,10 +1,11 @@
-//! Semantic binding and type checking.
+//! Semantic validation - catching errors before execution.
 //!
-//! The binder resolves names, checks types, and produces a bound plan.
-//! It validates that:
-//! - All referenced variables are defined in scope
-//! - Property accesses are on valid variables
-//! - Types are compatible in expressions
+//! The binder walks the logical plan and validates that everything makes sense:
+//! - Is that variable actually defined? (You can't use `RETURN x` if `x` wasn't matched)
+//! - Does that property access make sense? (Accessing `.age` on an integer fails)
+//! - Are types compatible? (Can't compare a string to an integer)
+//!
+//! Better to catch these errors early than waste time executing a broken query.
 
 use crate::query::plan::{
     ExpandOp, FilterOp, LogicalExpression, LogicalOperator, LogicalPlan, NodeScanOp, ReturnItem,
@@ -398,6 +399,26 @@ impl Binder {
                 );
                 Ok(())
             }
+            // SPARQL Update operators - these don't require variable binding
+            LogicalOperator::InsertTriple(insert) => {
+                if let Some(ref input) = insert.input {
+                    self.bind_operator(input)?;
+                }
+                Ok(())
+            }
+            LogicalOperator::DeleteTriple(delete) => {
+                if let Some(ref input) = delete.input {
+                    self.bind_operator(input)?;
+                }
+                Ok(())
+            }
+            LogicalOperator::ClearGraph(_)
+            | LogicalOperator::CreateGraph(_)
+            | LogicalOperator::DropGraph(_)
+            | LogicalOperator::LoadGraph(_)
+            | LogicalOperator::CopyGraph(_)
+            | LogicalOperator::MoveGraph(_)
+            | LogicalOperator::AddGraph(_) => Ok(()),
         }
     }
 

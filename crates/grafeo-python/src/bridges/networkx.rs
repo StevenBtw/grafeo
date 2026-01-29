@@ -1,8 +1,9 @@
-//! NetworkX-compatible adapter for Grafeo.
+//! Bridge to the [NetworkX](https://networkx.org/) Python library.
 //!
-//! This module provides an adapter that allows Grafeo graphs to be
-//! used with NetworkX algorithms. The adapter implements a view that
-//! exposes Grafeo data in NetworkX-compatible format.
+//! NetworkX is Python's most popular graph analysis library. This adapter lets
+//! you convert Grafeo graphs to NetworkX for visualization (matplotlib, pyvis)
+//! or tap into NetworkX's algorithm library. You can also import NetworkX graphs
+//! into Grafeo for faster querying.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -17,26 +18,19 @@ use grafeo_engine::database::GrafeoDB;
 
 use crate::error::PyGrafeoError;
 
-/// NetworkX-compatible adapter for Grafeo.
+/// Work with your Grafeo graph using NetworkX conventions.
 ///
-/// Provides a view of a Grafeo graph that can be used with NetworkX
-/// algorithms or converted to a NetworkX graph.
+/// Get this via `db.as_networkx()`. You can convert to a real NetworkX graph
+/// for visualization, or use the built-in algorithms that match NetworkX's API
+/// but run at Rust speed.
 ///
-/// Usage:
 /// ```python
-/// db = grafeo.GrafeoDB()
-/// # ... populate graph ...
+/// # Option 1: Convert for visualization
+/// G = db.as_networkx().to_networkx()
+/// nx.draw(G)
 ///
-/// # Get NetworkX adapter
-/// nx_adapter = db.as_networkx()
-///
-/// # Use with NetworkX (requires networkx installed)
-/// import networkx as nx
-/// G = nx_adapter.to_networkx()  # Convert to NetworkX graph
-/// pr = nx.pagerank(G)
-///
-/// # Or use native Grafeo algorithms with NetworkX-style API
-/// pr = nx_adapter.pagerank()
+/// # Option 2: Use NetworkX-style API with Grafeo performance
+/// pr = db.as_networkx().pagerank()
 /// ```
 #[pyclass(name = "NetworkXAdapter")]
 pub struct PyNetworkXAdapter {

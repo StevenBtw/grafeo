@@ -1,6 +1,8 @@
-//! Logical query planner.
+//! Converts logical plans into physical execution trees.
 //!
-//! Converts a logical plan into a physical plan (tree of operators).
+//! The optimizer produces a logical plan (what data you want), but the planner
+//! converts it to a physical plan (how to actually get it). This means choosing
+//! hash joins vs nested loops, picking index scans vs full scans, etc.
 
 use crate::query::plan::{
     AddLabelOp, AggregateFunction as LogicalAggregateFunction, AggregateOp, AntiJoinOp, BinaryOp,

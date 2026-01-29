@@ -1,7 +1,7 @@
-//! The main Python interface to Grafeo.
+//! Your main entry point for using Grafeo from Python.
 //!
-//! [`PyGrafeoDB`] is what Python users interact with - it wraps the Rust
-//! database and exposes a Pythonic API.
+//! [`PyGrafeoDB`] wraps the Rust database engine and gives you a Pythonic API.
+//! Start here - create a database, run queries, and manage transactions.
 
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -21,10 +21,10 @@ use crate::graph::{PyEdge, PyNode};
 use crate::query::{PyQueryBuilder, PyQueryResult};
 use crate::types::PyValue;
 
-/// Result from async query execution.
+/// Holds results from async query execution.
 ///
-/// This is a simpler result type used for async queries since we can't
-/// safely extract nodes/edges from a non-Python context.
+/// Works like [`PyQueryResult`] but without node/edge extraction (async context
+/// limitations). Iterate directly or call [`rows()`](Self::rows) to get all data.
 #[pyclass(name = "AsyncQueryResult")]
 pub struct AsyncQueryResult {
     #[pyo3(get)]
@@ -72,7 +72,7 @@ impl AsyncQueryResult {
     }
 }
 
-/// Iterator for async query results.
+/// Iterates through async query result rows one at a time.
 #[pyclass]
 pub struct AsyncQueryResultIter {
     rows: Vec<Vec<Value>>,
@@ -101,10 +101,11 @@ impl AsyncQueryResultIter {
     }
 }
 
-/// Your handle to a Grafeo database from Python.
+/// Your connection to a Grafeo database.
 ///
-/// Create one with `GrafeoDB()` for in-memory or `GrafeoDB(path)` for
-/// persistent storage. Then use `execute()` to run queries.
+/// Create one with `GrafeoDB()` for in-memory storage (fast, temporary) or
+/// `GrafeoDB("path/to/db")` for persistent storage (survives restarts).
+/// Then use [`execute()`](Self::execute) to run GQL queries.
 #[pyclass(name = "GrafeoDB")]
 pub struct PyGrafeoDB {
     inner: Arc<RwLock<GrafeoDB>>,
@@ -681,16 +682,19 @@ impl PyGrafeoDB {
     }
 }
 
-/// Transaction wrapper.
+/// Groups multiple operations into an atomic unit.
 ///
-/// Use this as a context manager for transactional operations:
+/// Use as a context manager - changes are isolated until you commit, and
+/// automatically rolled back if an exception occurs:
+///
 /// ```python
 /// with db.begin_transaction() as tx:
-///     tx.execute("CREATE (n:Person {name: 'Alice'})")
-///     tx.commit()
+///     tx.execute("INSERT (:Person {name: 'Alice'})")
+///     tx.execute("INSERT (:Person {name: 'Bob'})")
+///     tx.commit()  # Both or neither
 /// ```
 ///
-/// Changes are isolated until commit and automatically rolled back on exception.
+/// Other connections see a consistent snapshot while you work.
 #[pyclass(name = "Transaction")]
 pub struct PyTransaction {
     db: Arc<RwLock<GrafeoDB>>,
@@ -849,7 +853,7 @@ impl PyTransaction {
     }
 }
 
-/// Database statistics.
+/// Quick stats about your database - node count, edge count, and more.
 #[pyclass(name = "DbStats")]
 pub struct PyDbStats {
     #[pyo3(get)]
@@ -872,7 +876,7 @@ impl PyDbStats {
     }
 }
 
-/// Extracts nodes and edges from a query result based on column types.
+/// Pulls nodes and edges out of query results so Python can work with them.
 fn extract_entities(result: &QueryResult, db: &GrafeoDB) -> (Vec<PyNode>, Vec<PyEdge>) {
     let mut nodes = Vec::new();
     let mut edges = Vec::new();

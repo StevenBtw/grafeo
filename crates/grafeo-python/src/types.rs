@@ -1,4 +1,16 @@
-//! Python type conversions.
+//! Converts between Python and Grafeo value types automatically.
+//!
+//! | Python type | Grafeo type | Notes |
+//! | ----------- | ----------- | ----- |
+//! | `None` | `Null` | |
+//! | `bool` | `Bool` | |
+//! | `int` | `Int64` | |
+//! | `float` | `Float64` | |
+//! | `str` | `String` | |
+//! | `list` | `List` | Elements converted recursively |
+//! | `dict` | `Map` | Keys must be strings |
+//! | `bytes` | `Bytes` | |
+//! | `datetime` | `Timestamp` | Converted to/from UTC |
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -10,7 +22,10 @@ use grafeo_common::types::{PropertyKey, Timestamp, Value};
 
 use crate::error::{PyGrafeoError, PyGrafeoResult};
 
-/// Python-wrapped Value type.
+/// Wraps a Grafeo value for explicit type handling.
+///
+/// Usually you don't need this - Python types convert automatically. Use this
+/// when you need explicit control like `Value.null()` or type checking.
 #[pyclass(name = "Value")]
 #[derive(Clone, Debug)]
 pub struct PyValue {
@@ -104,7 +119,7 @@ impl PyValue {
 }
 
 impl PyValue {
-    /// Convert from Python object to Value.
+    /// Converts a Python object to a Grafeo Value.
     pub fn from_py(obj: &Bound<'_, PyAny>) -> PyGrafeoResult<Value> {
         if obj.is_none() {
             return Ok(Value::Null);
@@ -183,7 +198,7 @@ impl PyValue {
         )))
     }
 
-    /// Convert Value to Python object.
+    /// Converts a Grafeo Value to a Python object.
     ///
     /// # Panics
     ///

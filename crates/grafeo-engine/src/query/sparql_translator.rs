@@ -3,9 +3,11 @@
 //! Translates SPARQL 1.1 AST to the common logical plan representation.
 
 use crate::query::plan::{
-    AggregateExpr, AggregateFunction, AggregateOp, BinaryOp, BindOp, DistinctOp, FilterOp, JoinOp,
-    JoinType, LimitOp, LogicalExpression, LogicalOperator, LogicalPlan, ProjectOp, Projection,
-    SkipOp, SortKey, SortOp, SortOrder, TripleComponent, TripleScanOp, UnaryOp, UnionOp,
+    AddGraphOp, AggregateExpr, AggregateFunction, AggregateOp, BinaryOp, BindOp, ClearGraphOp,
+    CopyGraphOp, CreateGraphOp, DeleteTripleOp, DistinctOp, DropGraphOp, FilterOp, InsertTripleOp,
+    JoinOp, JoinType, LimitOp, LoadGraphOp, LogicalExpression, LogicalOperator, LogicalPlan,
+    MoveGraphOp, ProjectOp, Projection, SkipOp, SortKey, SortOp, SortOrder, TripleComponent,
+    TripleScanOp, UnaryOp, UnionOp,
 };
 use grafeo_adapters::query::sparql::{self, ast};
 use grafeo_common::types::Value;
@@ -59,6 +61,7 @@ impl SparqlTranslator {
             ast::QueryForm::Ask(ask) => self.translate_ask(ask),
             ast::QueryForm::Construct(construct) => self.translate_construct(construct),
             ast::QueryForm::Describe(describe) => self.translate_describe(describe),
+            ast::QueryForm::Update(update) => self.translate_update(update),
         }
     }
 
@@ -184,6 +187,327 @@ impl SparqlTranslator {
         } else {
             // DESCRIBE with just IRIs - create a scan for each resource
             Ok(LogicalPlan::new(LogicalOperator::Empty))
+        }
+    }
+
+    // ==================== SPARQL Update Translation ====================
+
+    fn translate_update(&mut self, update: &ast::UpdateOperation) -> Result<LogicalPlan> {
+        match update {
+            ast::UpdateOperation::InsertData { data } => self.translate_insert_data(data),
+            ast::UpdateOperation::DeleteData { data } => self.translate_delete_data(data),
+            ast::UpdateOperation::DeleteWhere { pattern } => self.translate_delete_where(pattern),
+            ast::UpdateOperation::Modify {
+                with_graph,
+                delete_template,
+                insert_template,
+                using_clauses: _,
+                where_clause,
+            } => self.translate_modify(with_graph, delete_template, insert_template, where_clause),
+            ast::UpdateOperation::Load {
+                silent,
+                source,
+                destination,
+            } => self.translate_load(*silent, source, destination.as_ref()),
+            ast::UpdateOperation::Clear { silent, target } => {
+                self.translate_clear(*silent, target)
+            }
+            ast::UpdateOperation::Drop { silent, target } => self.translate_drop(*silent, target),
+            ast::UpdateOperation::Create { silent, graph } => {
+                self.translate_create(*silent, graph)
+            }
+            ast::UpdateOperation::Copy {
+                silent,
+                source,
+                destination,
+            } => self.translate_copy(*silent, source, destination),
+            ast::UpdateOperation::Move {
+                silent,
+                source,
+                destination,
+            } => self.translate_move(*silent, source, destination),
+            ast::UpdateOperation::Add {
+                silent,
+                source,
+                destination,
+            } => self.translate_add(*silent, source, destination),
+        }
+    }
+
+    fn translate_insert_data(&mut self, data: &[ast::QuadPattern]) -> Result<LogicalPlan> {
+        // Build a sequence of InsertTriple operators
+        let mut ops = Vec::new();
+        for quad in data {
+            let subject = self.translate_triple_term(&quad.triple.subject)?;
+            let predicate = self.translate_property_path(&quad.triple.predicate)?;
+            let object = self.translate_triple_term(&quad.triple.object)?;
+            let graph = quad
+                .graph
+                .as_ref()
+                .map(|g| self.resolve_variable_or_iri(g));
+
+            ops.push(LogicalOperator::InsertTriple(InsertTripleOp {
+                subject,
+                predicate,
+                object,
+                graph,
+                input: None,
+            }));
+        }
+
+        // Combine all inserts into a sequence using Union
+        if ops.is_empty() {
+            Ok(LogicalPlan::new(LogicalOperator::Empty))
+        } else if ops.len() == 1 {
+            Ok(LogicalPlan::new(ops.into_iter().next().unwrap()))
+        } else {
+            Ok(LogicalPlan::new(LogicalOperator::Union(UnionOp {
+                inputs: ops,
+            })))
+        }
+    }
+
+    fn translate_delete_data(&mut self, data: &[ast::QuadPattern]) -> Result<LogicalPlan> {
+        // Build a sequence of DeleteTriple operators
+        let mut ops = Vec::new();
+        for quad in data {
+            let subject = self.translate_triple_term(&quad.triple.subject)?;
+            let predicate = self.translate_property_path(&quad.triple.predicate)?;
+            let object = self.translate_triple_term(&quad.triple.object)?;
+            let graph = quad
+                .graph
+                .as_ref()
+                .map(|g| self.resolve_variable_or_iri(g));
+
+            ops.push(LogicalOperator::DeleteTriple(DeleteTripleOp {
+                subject,
+                predicate,
+                object,
+                graph,
+                input: None,
+            }));
+        }
+
+        if ops.is_empty() {
+            Ok(LogicalPlan::new(LogicalOperator::Empty))
+        } else if ops.len() == 1 {
+            Ok(LogicalPlan::new(ops.into_iter().next().unwrap()))
+        } else {
+            Ok(LogicalPlan::new(LogicalOperator::Union(UnionOp {
+                inputs: ops,
+            })))
+        }
+    }
+
+    fn translate_delete_where(&mut self, pattern: &ast::GraphPattern) -> Result<LogicalPlan> {
+        // DELETE WHERE uses the pattern both for matching and deletion
+        // First, translate the pattern to get bindings
+        let match_plan = self.translate_graph_pattern(pattern)?;
+
+        // For DELETE WHERE, the WHERE pattern is the same as the delete template
+        // We extract triples from the pattern and create delete operations
+        let triples = self.extract_triples_from_pattern(pattern);
+
+        // Build delete operators with the match plan as input
+        let mut ops = Vec::new();
+        for triple in &triples {
+            let subject = self.translate_triple_term(&triple.subject)?;
+            let predicate = self.translate_property_path(&triple.predicate)?;
+            let object = self.translate_triple_term(&triple.object)?;
+
+            ops.push(LogicalOperator::DeleteTriple(DeleteTripleOp {
+                subject,
+                predicate,
+                object,
+                graph: None, // Default graph
+                input: Some(Box::new(match_plan.clone())),
+            }));
+        }
+
+        if ops.is_empty() {
+            Ok(LogicalPlan::new(match_plan))
+        } else if ops.len() == 1 {
+            Ok(LogicalPlan::new(ops.into_iter().next().unwrap()))
+        } else {
+            Ok(LogicalPlan::new(LogicalOperator::Union(UnionOp {
+                inputs: ops,
+            })))
+        }
+    }
+
+    fn extract_triples_from_pattern(&self, pattern: &ast::GraphPattern) -> Vec<ast::TriplePattern> {
+        match pattern {
+            ast::GraphPattern::Basic(triples) => triples.clone(),
+            ast::GraphPattern::Group(patterns) => patterns
+                .iter()
+                .flat_map(|p| self.extract_triples_from_pattern(p))
+                .collect(),
+            _ => Vec::new(),
+        }
+    }
+
+    fn translate_modify(
+        &mut self,
+        with_graph: &Option<ast::Iri>,
+        delete_template: &Option<Vec<ast::QuadPattern>>,
+        insert_template: &Option<Vec<ast::QuadPattern>>,
+        where_clause: &ast::GraphPattern,
+    ) -> Result<LogicalPlan> {
+        // First, translate the WHERE clause to get bindings
+        let match_plan = self.translate_graph_pattern(where_clause)?;
+
+        let default_graph = with_graph.as_ref().map(|g| self.resolve_iri(g));
+
+        // Build delete operators
+        let mut delete_ops = Vec::new();
+        if let Some(delete_quads) = delete_template {
+            for quad in delete_quads {
+                let subject = self.translate_triple_term(&quad.triple.subject)?;
+                let predicate = self.translate_property_path(&quad.triple.predicate)?;
+                let object = self.translate_triple_term(&quad.triple.object)?;
+                let graph = quad
+                    .graph
+                    .as_ref()
+                    .map(|g| self.resolve_variable_or_iri(g))
+                    .or_else(|| default_graph.clone());
+
+                delete_ops.push(LogicalOperator::DeleteTriple(DeleteTripleOp {
+                    subject,
+                    predicate,
+                    object,
+                    graph,
+                    input: Some(Box::new(match_plan.clone())),
+                }));
+            }
+        }
+
+        // Build insert operators
+        let mut insert_ops = Vec::new();
+        if let Some(insert_quads) = insert_template {
+            for quad in insert_quads {
+                let subject = self.translate_triple_term(&quad.triple.subject)?;
+                let predicate = self.translate_property_path(&quad.triple.predicate)?;
+                let object = self.translate_triple_term(&quad.triple.object)?;
+                let graph = quad
+                    .graph
+                    .as_ref()
+                    .map(|g| self.resolve_variable_or_iri(g))
+                    .or_else(|| default_graph.clone());
+
+                insert_ops.push(LogicalOperator::InsertTriple(InsertTripleOp {
+                    subject,
+                    predicate,
+                    object,
+                    graph,
+                    input: Some(Box::new(match_plan.clone())),
+                }));
+            }
+        }
+
+        // Combine all operations
+        let mut all_ops = delete_ops;
+        all_ops.extend(insert_ops);
+
+        if all_ops.is_empty() {
+            Ok(LogicalPlan::new(LogicalOperator::Empty))
+        } else if all_ops.len() == 1 {
+            Ok(LogicalPlan::new(all_ops.into_iter().next().unwrap()))
+        } else {
+            Ok(LogicalPlan::new(LogicalOperator::Union(UnionOp {
+                inputs: all_ops,
+            })))
+        }
+    }
+
+    fn translate_load(
+        &mut self,
+        silent: bool,
+        source: &ast::Iri,
+        destination: Option<&ast::Iri>,
+    ) -> Result<LogicalPlan> {
+        Ok(LogicalPlan::new(LogicalOperator::LoadGraph(LoadGraphOp {
+            source: self.resolve_iri(source),
+            destination: destination.map(|d| self.resolve_iri(d)),
+            silent,
+        })))
+    }
+
+    fn translate_clear(&mut self, silent: bool, target: &ast::GraphTarget) -> Result<LogicalPlan> {
+        let graph = self.translate_graph_target(target);
+        Ok(LogicalPlan::new(LogicalOperator::ClearGraph(ClearGraphOp {
+            graph,
+            silent,
+        })))
+    }
+
+    fn translate_drop(&mut self, silent: bool, target: &ast::GraphTarget) -> Result<LogicalPlan> {
+        let graph = self.translate_graph_target(target);
+        Ok(LogicalPlan::new(LogicalOperator::DropGraph(DropGraphOp {
+            graph,
+            silent,
+        })))
+    }
+
+    fn translate_create(&mut self, silent: bool, graph: &ast::Iri) -> Result<LogicalPlan> {
+        Ok(LogicalPlan::new(LogicalOperator::CreateGraph(
+            CreateGraphOp {
+                graph: self.resolve_iri(graph),
+                silent,
+            },
+        )))
+    }
+
+    fn translate_copy(
+        &mut self,
+        silent: bool,
+        source: &ast::GraphTarget,
+        destination: &ast::GraphTarget,
+    ) -> Result<LogicalPlan> {
+        Ok(LogicalPlan::new(LogicalOperator::CopyGraph(CopyGraphOp {
+            source: self.translate_graph_target(source),
+            destination: self.translate_graph_target(destination),
+            silent,
+        })))
+    }
+
+    fn translate_move(
+        &mut self,
+        silent: bool,
+        source: &ast::GraphTarget,
+        destination: &ast::GraphTarget,
+    ) -> Result<LogicalPlan> {
+        Ok(LogicalPlan::new(LogicalOperator::MoveGraph(MoveGraphOp {
+            source: self.translate_graph_target(source),
+            destination: self.translate_graph_target(destination),
+            silent,
+        })))
+    }
+
+    fn translate_add(
+        &mut self,
+        silent: bool,
+        source: &ast::GraphTarget,
+        destination: &ast::GraphTarget,
+    ) -> Result<LogicalPlan> {
+        Ok(LogicalPlan::new(LogicalOperator::AddGraph(AddGraphOp {
+            source: self.translate_graph_target(source),
+            destination: self.translate_graph_target(destination),
+            silent,
+        })))
+    }
+
+    fn translate_graph_target(&self, target: &ast::GraphTarget) -> Option<String> {
+        match target {
+            ast::GraphTarget::Default => None,
+            ast::GraphTarget::Named(iri) => Some(self.resolve_iri(iri)),
+            ast::GraphTarget::All => Some(String::new()), // Empty string represents "all"
+        }
+    }
+
+    fn resolve_variable_or_iri(&self, var_or_iri: &ast::VariableOrIri) -> String {
+        match var_or_iri {
+            ast::VariableOrIri::Variable(name) => format!("?{}", name),
+            ast::VariableOrIri::Iri(iri) => self.resolve_iri(iri),
         }
     }
 
@@ -1020,5 +1344,157 @@ mod tests {
         assert_eq!(translator.next_anon(), 0);
         assert_eq!(translator.next_anon(), 1);
         assert_eq!(translator.next_anon(), 2);
+    }
+
+    // === SPARQL Update Tests ===
+
+    #[test]
+    fn test_translate_insert_data() {
+        let query = r#"INSERT DATA { <http://ex.org/s> <http://ex.org/p> "value" }"#;
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        fn has_insert_triple(op: &LogicalOperator) -> bool {
+            match op {
+                LogicalOperator::InsertTriple(_) => true,
+                LogicalOperator::Union(u) => u.inputs.iter().any(has_insert_triple),
+                _ => false,
+            }
+        }
+        assert!(has_insert_triple(&plan.root));
+    }
+
+    #[test]
+    fn test_translate_delete_data() {
+        let query = r#"DELETE DATA { <http://ex.org/s> <http://ex.org/p> "value" }"#;
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        fn has_delete_triple(op: &LogicalOperator) -> bool {
+            match op {
+                LogicalOperator::DeleteTriple(_) => true,
+                LogicalOperator::Union(u) => u.inputs.iter().any(has_delete_triple),
+                _ => false,
+            }
+        }
+        assert!(has_delete_triple(&plan.root));
+    }
+
+    #[test]
+    fn test_translate_delete_where() {
+        let query = r#"DELETE WHERE { ?s <http://ex.org/p> ?o }"#;
+        let result = translate(query);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_translate_modify_delete_insert() {
+        let query = r#"
+            DELETE { ?s <http://ex.org/old> ?o }
+            INSERT { ?s <http://ex.org/new> ?o }
+            WHERE { ?s <http://ex.org/old> ?o }
+        "#;
+        let result = translate(query);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_translate_clear_graph() {
+        let query = "CLEAR DEFAULT";
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        assert!(matches!(plan.root, LogicalOperator::ClearGraph(_)));
+    }
+
+    #[test]
+    fn test_translate_drop_graph() {
+        let query = "DROP GRAPH <http://example.org/graph>";
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        assert!(matches!(plan.root, LogicalOperator::DropGraph(_)));
+    }
+
+    #[test]
+    fn test_translate_create_graph() {
+        let query = "CREATE GRAPH <http://example.org/newgraph>";
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        assert!(matches!(plan.root, LogicalOperator::CreateGraph(_)));
+    }
+
+    #[test]
+    fn test_translate_copy_graph() {
+        let query = "COPY DEFAULT TO <http://example.org/backup>";
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        assert!(matches!(plan.root, LogicalOperator::CopyGraph(_)));
+    }
+
+    #[test]
+    fn test_translate_move_graph() {
+        let query = "MOVE <http://example.org/old> TO <http://example.org/new>";
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        assert!(matches!(plan.root, LogicalOperator::MoveGraph(_)));
+    }
+
+    #[test]
+    fn test_translate_add_graph() {
+        let query = "ADD <http://example.org/source> TO <http://example.org/dest>";
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        assert!(matches!(plan.root, LogicalOperator::AddGraph(_)));
+    }
+
+    #[test]
+    fn test_translate_load_graph() {
+        let query = "LOAD <http://example.org/data.ttl>";
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        assert!(matches!(plan.root, LogicalOperator::LoadGraph(_)));
+    }
+
+    #[test]
+    fn test_translate_load_into_graph() {
+        let query = "LOAD <http://example.org/data.ttl> INTO GRAPH <http://example.org/target>";
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        if let LogicalOperator::LoadGraph(load) = &plan.root {
+            assert!(load.destination.is_some());
+        } else {
+            panic!("Expected LoadGraph operator");
+        }
+    }
+
+    #[test]
+    fn test_translate_silent_operations() {
+        let query = "DROP SILENT GRAPH <http://example.org/graph>";
+        let result = translate(query);
+        assert!(result.is_ok());
+
+        let plan = result.unwrap();
+        if let LogicalOperator::DropGraph(drop) = &plan.root {
+            assert!(drop.silent);
+        } else {
+            panic!("Expected DropGraph operator");
+        }
     }
 }

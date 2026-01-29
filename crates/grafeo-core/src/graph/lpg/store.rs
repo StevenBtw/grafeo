@@ -1,8 +1,13 @@
 //! The in-memory LPG graph store.
 //!
-//! This is where nodes and edges actually live. Most users interact with
-//! this through [`GrafeoDB`](grafeo_engine::GrafeoDB), but if you need
-//! direct access for algorithms, here it is.
+//! This is where your nodes and edges actually live. Most users interact
+//! through [`GrafeoDB`](grafeo_engine::GrafeoDB), but algorithm implementers
+//! sometimes need the raw [`LpgStore`] for direct adjacency traversal.
+//!
+//! Key features:
+//! - MVCC versioning - concurrent readers don't block each other
+//! - Columnar properties with zone maps for fast filtering
+//! - Forward and backward adjacency indexes
 
 use super::property::CompareOp;
 use super::{Edge, EdgeRecord, Node, NodeRecord, PropertyStorage};
@@ -18,13 +23,18 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Configuration for the LPG store.
+///
+/// The defaults work well for most cases. Tune `backward_edges` if you only
+/// traverse in one direction (saves memory), or adjust capacities if you know
+/// your graph size upfront (avoids reallocations).
 #[derive(Debug, Clone)]
 pub struct LpgStoreConfig {
-    /// Whether to maintain backward adjacency lists.
+    /// Maintain backward adjacency for incoming edge queries. Turn off if
+    /// you only traverse outgoing edges - saves ~50% adjacency memory.
     pub backward_edges: bool,
-    /// Initial capacity for nodes.
+    /// Initial capacity for nodes (avoids early reallocations).
     pub initial_node_capacity: usize,
-    /// Initial capacity for edges.
+    /// Initial capacity for edges (avoids early reallocations).
     pub initial_edge_capacity: usize,
 }
 
@@ -38,14 +48,33 @@ impl Default for LpgStoreConfig {
     }
 }
 
-/// The core LPG graph storage.
+/// The core in-memory graph storage.
 ///
-/// Holds all nodes, edges, properties, and indexes in memory. Designed for
-/// concurrent reads with MVCC versioning so queries don't block each other.
+/// Everything lives here: nodes, edges, properties, adjacency indexes, and
+/// version chains for MVCC. Concurrent reads never block each other.
 ///
-/// For most use cases, interact through [`GrafeoDB`](grafeo_engine::GrafeoDB).
-/// Direct access is useful for algorithm implementations that need raw
-/// adjacency traversal.
+/// Most users should go through [`GrafeoDB`](grafeo_engine::GrafeoDB) which
+/// adds transaction management and query execution. Use `LpgStore` directly
+/// when you need raw performance for algorithm implementations.
+///
+/// # Example
+///
+/// ```
+/// use grafeo_core::graph::lpg::LpgStore;
+/// use grafeo_core::graph::Direction;
+///
+/// let store = LpgStore::new();
+///
+/// // Create a small social network
+/// let alice = store.create_node(&["Person"]);
+/// let bob = store.create_node(&["Person"]);
+/// store.create_edge(alice, bob, "KNOWS");
+///
+/// // Traverse outgoing edges
+/// for neighbor in store.neighbors(alice, Direction::Outgoing) {
+///     println!("Alice knows node {:?}", neighbor);
+/// }
+/// ```
 pub struct LpgStore {
     /// Configuration.
     #[allow(dead_code)]
@@ -342,7 +371,10 @@ impl LpgStore {
         }
     }
 
-    /// Deletes all edges connected to a node (for DETACH DELETE).
+    /// Deletes all edges connected to a node (implements DETACH DELETE).
+    ///
+    /// Call this before `delete_node()` if you want to remove a node that
+    /// has edges. Grafeo doesn't auto-delete edges - you have to be explicit.
     pub fn delete_node_edges(&self, node_id: NodeId) {
         // Get outgoing edges
         let outgoing: Vec<EdgeId> = self
@@ -772,7 +804,10 @@ impl LpgStore {
 
     // === Traversal ===
 
-    /// Returns an iterator over neighbors of a node.
+    /// Iterates over neighbors of a node in the specified direction.
+    ///
+    /// This is the fast path for graph traversal - goes straight to the
+    /// adjacency index without loading full node data.
     pub fn neighbors(
         &self,
         node: NodeId,
@@ -839,7 +874,10 @@ impl LpgStore {
         id_to_type.get(record.type_id as usize).cloned()
     }
 
-    /// Returns nodes with a specific label.
+    /// Returns all nodes with a specific label.
+    ///
+    /// Uses the label index for O(1) lookup per label. Returns a snapshot -
+    /// concurrent modifications won't affect the returned vector.
     pub fn nodes_by_label(&self, label: &str) -> Vec<NodeId> {
         let label_to_id = self.label_to_id.read();
         if let Some(&label_id) = label_to_id.get(label) {
@@ -904,9 +942,10 @@ impl LpgStore {
         self.statistics.read().clone()
     }
 
-    /// Updates statistics from current data.
+    /// Recomputes statistics from current data.
     ///
-    /// This scans all labels and edge types to compute cardinality statistics.
+    /// Scans all labels and edge types to build cardinality estimates for the
+    /// query optimizer. Call this periodically or after bulk data loads.
     pub fn compute_statistics(&self) {
         let mut stats = Statistics::new();
 

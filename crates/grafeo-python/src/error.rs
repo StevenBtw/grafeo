@@ -1,10 +1,13 @@
-//! Error handling for Python bindings.
+//! Converts Rust errors to Python exceptions.
+//!
+//! Type errors and invalid arguments become `ValueError`, while database,
+//! query, and transaction errors become `RuntimeError`.
 
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use thiserror::Error;
 
-/// Python binding errors.
+/// Grafeo errors that translate to Python exceptions.
 #[derive(Error, Debug)]
 pub enum PyGrafeoError {
     #[error("Database error: {0}")]
@@ -48,5 +51,5 @@ impl From<grafeo_common::utils::error::Error> for PyGrafeoError {
     }
 }
 
-/// Result type for Python bindings.
+/// Convenience type for functions that may fail with a Python-compatible error.
 pub type PyGrafeoResult<T> = Result<T, PyGrafeoError>;

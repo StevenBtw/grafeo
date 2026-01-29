@@ -1,4 +1,8 @@
-//! Session management.
+//! Lightweight handles for database interaction.
+//!
+//! A session is your conversation with the database. Each session can have
+//! its own transaction state, so concurrent sessions don't interfere with
+//! each other. Sessions are cheap to create - spin up as many as you need.
 
 use std::sync::Arc;
 
@@ -9,10 +13,11 @@ use grafeo_core::graph::lpg::LpgStore;
 use crate::database::QueryResult;
 use crate::transaction::TransactionManager;
 
-/// A session for interacting with the database.
+/// Your handle to the database - execute queries and manage transactions.
 ///
-/// Sessions provide isolation between concurrent users and
-/// manage transaction state.
+/// Get one from [`GrafeoDB::session()`](crate::GrafeoDB::session). Each session
+/// tracks its own transaction state, so you can have multiple concurrent
+/// sessions without them interfering.
 pub struct Session {
     /// The underlying store.
     store: Arc<LpgStore>,

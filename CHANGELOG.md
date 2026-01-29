@@ -15,10 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RDF graph tests
 - GQL query language tests
 - Test fixtures and base classes
+- solvOR plugin comparison tests for all 5 query languages (GQL, Cypher, Gremlin, GraphQL, SPARQL)
 
 ### Changed
 - Fully functioning database implementation
 - Complete query execution pipeline
+
+### Documentation
+
+- Big docstring pass across all crates
+- Added tables, examples, and practical guidance throughout API docs
+- Improved Python bindings documentation with library references (NetworkX, solvOR)
 
 ## [0.1.1] - Unreleased
 

@@ -1,31 +1,37 @@
-//! Python bindings for Grafeo.
+//! Use Grafeo from Python with native Rust performance.
 //!
-//! This crate wraps the Rust graph database for Python users. You get the
-//! same performance as the Rust API, with a Pythonic interface.
+//! You get full access to the graph database through a Pythonic API - same
+//! query speed, same durability, with the convenience of Python's ecosystem.
 //!
-//! ## Quick Start (Python)
+//! ## Quick Start
 //!
 //! ```python
 //! from grafeo import GrafeoDB
 //!
-//! # Create an in-memory database
-//! db = GrafeoDB.new_in_memory()
+//! # Create an in-memory database (or pass a path for persistence)
+//! db = GrafeoDB()
 //!
-//! # Add some data
-//! db.execute("INSERT (:Person {name: 'Alice', age: 30})")
+//! # Create some people
+//! db.execute("INSERT (:Person {name: 'Alice', role: 'Engineer'})")
+//! db.execute("INSERT (:Person {name: 'Bob', role: 'Manager'})")
+//! db.execute("""
+//!     MATCH (a:Person {name: 'Alice'}), (b:Person {name: 'Bob'})
+//!     INSERT (a)-[:REPORTS_TO]->(b)
+//! """)
 //!
-//! # Query it
-//! result = db.execute("MATCH (p:Person) RETURN p.name")
+//! # Query the graph
+//! result = db.execute("MATCH (p:Person)-[:REPORTS_TO]->(m) RETURN p.name, m.name")
 //! for row in result:
-//!     print(row)
+//!     print(f"{row['p.name']} reports to {row['m.name']}")
 //! ```
 //!
-//! ## Interop
+//! ## Data Science Integration
 //!
-//! Grafeo plays nicely with the Python data science ecosystem:
-//! - Convert to NetworkX for graph algorithms
-//! - Export to pandas DataFrames
-//! - Use with OR-Tools for optimization
+//! | Library | How to use | Best for |
+//! | ------- | ---------- | -------- |
+//! | NetworkX | `db.as_networkx().to_networkx()` | Graph visualization, analysis |
+//! | pandas | `result.to_list()` then `pd.DataFrame()` | Tabular operations |
+//! | solvOR | `db.as_solvor()` | Operations research algorithms |
 
 #![warn(missing_docs)]
 

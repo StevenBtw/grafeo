@@ -1,4 +1,4 @@
-//! Python graph element wrappers.
+//! Graph elements exposed to Python - nodes and edges with their properties.
 
 use std::collections::HashMap;
 
@@ -8,7 +8,11 @@ use grafeo_common::types::{EdgeId, NodeId, Value};
 
 use crate::types::PyValue;
 
-/// Python-wrapped Node.
+/// A node in your graph with labels and properties.
+///
+/// Access properties with `node["name"]` or `node.get("name")`. Check labels
+/// with `node.has_label("Person")`. Nodes are returned by queries like
+/// `MATCH (n:Person) RETURN n`.
 #[pyclass(name = "Node")]
 #[derive(Clone, Debug)]
 pub struct PyNode {
@@ -81,7 +85,7 @@ impl PyNode {
 }
 
 impl PyNode {
-    /// Create a new Python node wrapper.
+    /// Creates a new Python node wrapper (used internally).
     pub fn new(id: NodeId, labels: Vec<String>, properties: HashMap<String, Value>) -> Self {
         Self {
             id,
@@ -91,7 +95,11 @@ impl PyNode {
     }
 }
 
-/// Python-wrapped Edge.
+/// A relationship between two nodes with a type and properties.
+///
+/// Access properties with `edge["weight"]` or `edge.get("weight")`. Check the
+/// relationship type with `edge.edge_type`. Edges connect a `source_id` to a
+/// `target_id` and are returned by queries like `MATCH ()-[r:WORKS_AT]->() RETURN r`.
 #[pyclass(name = "Edge")]
 #[derive(Clone, Debug)]
 pub struct PyEdge {
@@ -173,7 +181,7 @@ impl PyEdge {
 }
 
 impl PyEdge {
-    /// Create a new Python edge wrapper.
+    /// Creates a new Python edge wrapper (used internally).
     pub fn new(
         id: EdgeId,
         edge_type: String,

@@ -1,18 +1,15 @@
-//! Query optimizer.
+//! Makes your queries faster without changing their meaning.
 //!
-//! Transforms logical plans for better performance.
+//! The optimizer transforms logical plans to run more efficiently:
 //!
-//! ## Optimization Rules
+//! | Optimization | What it does |
+//! | ------------ | ------------ |
+//! | Filter Pushdown | Moves `WHERE` clauses closer to scans - filter early, process less |
+//! | Join Reordering | Picks the best order to join tables using the DPccp algorithm |
+//! | Predicate Simplification | Folds constants like `1 + 1` into `2` |
 //!
-//! - **Filter Pushdown**: Pushes filters closer to scans to reduce data early
-//! - **Predicate Simplification**: Simplifies constant expressions
-//! - **Join Reordering**: Optimizes join order using DPccp algorithm
-//!
-//! ## Submodules
-//!
-//! - [`cost`] - Cost model for estimating operator costs
-//! - [`cardinality`] - Cardinality estimation for query operators
-//! - [`join_order`] - DPccp join ordering algorithm
+//! The optimizer uses [`CostModel`] and [`CardinalityEstimator`] to predict
+//! how expensive different plans are, then picks the cheapest.
 
 pub mod cardinality;
 pub mod cost;
@@ -26,7 +23,10 @@ use crate::query::plan::{FilterOp, LogicalExpression, LogicalOperator, LogicalPl
 use grafeo_common::utils::error::Result;
 use std::collections::HashSet;
 
-/// Query optimizer that transforms logical plans for better performance.
+/// Transforms logical plans for faster execution.
+///
+/// Create with [`new()`](Self::new), then call [`optimize()`](Self::optimize).
+/// Use the builder methods to enable/disable specific optimizations.
 pub struct Optimizer {
     /// Whether to enable filter pushdown.
     enable_filter_pushdown: bool,

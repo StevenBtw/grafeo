@@ -1,16 +1,20 @@
-//! Zone maps for data skipping during scans.
+//! Zone maps for intelligent data skipping.
 //!
-//! Zone maps store min/max/null_count metadata for each chunk of property data,
-//! allowing the query engine to skip chunks that can't possibly match a predicate.
+//! Each chunk of property data tracks its min, max, and null count. When filtering
+//! with a predicate like `age < 30`, we check the zone map first - if the minimum
+//! age in a chunk is 50, we skip the entire chunk without reading a single value.
 //!
-//! For example, if a chunk has min=50 and max=100, and the predicate is `age < 30`,
-//! the entire chunk can be skipped without reading any actual data.
+//! This is huge for large scans. Combined with columnar storage, you often skip
+//! 90%+ of the data for selective predicates.
 
 use grafeo_common::types::Value;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-/// Zone map for a single chunk of data.
+/// Statistics for a single chunk of property data.
+///
+/// The query optimizer uses these to skip chunks that can't match a predicate.
+/// For example, if `max < 30` and the predicate is `value > 50`, skip the chunk.
 #[derive(Debug, Clone)]
 pub struct ZoneMapEntry {
     /// Minimum value in the chunk (None if all nulls).
@@ -180,7 +184,9 @@ impl Default for ZoneMapEntry {
     }
 }
 
-/// Builder for constructing zone map entries from data.
+/// Incrementally builds a zone map entry as you add values.
+///
+/// Feed it values one at a time; it tracks min/max/nulls automatically.
 pub struct ZoneMapBuilder {
     min: Option<Value>,
     max: Option<Value>,
@@ -271,9 +277,10 @@ impl Default for ZoneMapBuilder {
     }
 }
 
-/// Zone map index for a property column.
+/// Collection of zone maps for all chunks of a property column.
 ///
-/// Maps chunk IDs to their zone map entries.
+/// Use [`filter_equal`](Self::filter_equal) or [`filter_range`](Self::filter_range)
+/// to get chunk IDs that might contain matching values.
 pub struct ZoneMapIndex {
     /// Zone map entries per chunk.
     entries: HashMap<u64, ZoneMapEntry>,
@@ -405,7 +412,11 @@ impl ZoneMapIndex {
     }
 }
 
-/// Simple Bloom filter for equality predicate optimization.
+/// A probabilistic data structure for fast "definitely not in set" checks.
+///
+/// Bloom filters can have false positives (says "maybe" when absent) but never
+/// false negatives (if it says "no", the value is definitely absent). Use this
+/// to quickly rule out chunks that can't contain a value.
 #[derive(Debug, Clone)]
 pub struct BloomFilter {
     /// Bit array.
