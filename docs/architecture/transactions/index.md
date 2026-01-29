@@ -5,7 +5,7 @@ description: Transaction management and MVCC.
 
 # Transactions
 
-Graphos provides ACID transactions with MVCC.
+Grafeo provides ACID transactions with MVCC.
 
 ## Sections
 

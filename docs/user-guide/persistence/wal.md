@@ -9,7 +9,7 @@ tags:
 
 # WAL Recovery
 
-Graphos uses Write-Ahead Logging (WAL) to ensure durability and enable crash recovery.
+Grafeo uses Write-Ahead Logging (WAL) to ensure durability and enable crash recovery.
 
 ## How WAL Works
 
@@ -22,14 +22,14 @@ Graphos uses Write-Ahead Logging (WAL) to ensure durability and enable crash rec
 
 When opening a database after a crash:
 
-1. Graphos detects incomplete transactions in the WAL
+1. Grafeo detects incomplete transactions in the WAL
 2. Committed transactions are replayed
 3. Uncommitted transactions are rolled back
 4. Database is restored to a consistent state
 
 ```python
 # Recovery happens automatically on open
-db = graphos.Database(path="my_graph.db")
+db = grafeo.Database(path="my_graph.db")
 # Database is now in a consistent state
 ```
 

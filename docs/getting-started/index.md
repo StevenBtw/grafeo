@@ -1,11 +1,11 @@
 ---
 title: Getting Started
-description: Get up and running with Graphos in minutes.
+description: Get up and running with Grafeo in minutes.
 ---
 
 # Getting Started
 
-Welcome to Graphos! This guide will help you get started with the high-performance graph database.
+Welcome to Grafeo! This guide will help you get started with the high-performance graph database.
 
 ## Choose Your Path
 
@@ -15,7 +15,7 @@ Welcome to Graphos! This guide will help you get started with the high-performan
 
     ---
 
-    Install Graphos for Python or Rust in your project.
+    Install Grafeo for Python or Rust in your project.
 
     [:octicons-arrow-right-24: Installation Guide](installation.md)
 

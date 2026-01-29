@@ -1,6 +1,6 @@
 ---
 title: Nodes and Labels
-description: Working with nodes and labels in Graphos.
+description: Working with nodes and labels in Grafeo.
 tags:
   - data-model
   - nodes

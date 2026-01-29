@@ -1,11 +1,11 @@
 ---
 title: Persistence
-description: Storage modes and data durability in Graphos.
+description: Storage modes and data durability in Grafeo.
 ---
 
 # Persistence
 
-Graphos supports multiple storage modes for different use cases.
+Grafeo supports multiple storage modes for different use cases.
 
 ## Storage Modes
 

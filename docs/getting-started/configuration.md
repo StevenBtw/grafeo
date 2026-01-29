@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Configure Graphos for your use case.
+description: Configure Grafeo for your use case.
 ---
 
 # Configuration
 
-Graphos can be configured for different use cases, from small embedded applications to high-performance server deployments.
+Grafeo can be configured for different use cases, from small embedded applications to high-performance server deployments.
 
 ## Database Modes
 
@@ -16,16 +16,16 @@ For temporary data or maximum performance:
 === "Python"
 
     ```python
-    import graphos
+    import grafeo
 
     # In-memory database (default)
-    db = graphos.Database()
+    db = grafeo.Database()
     ```
 
 === "Rust"
 
     ```rust
-    use graphos::Database;
+    use grafeo::Database;
 
     let db = Database::open_in_memory()?;
     ```
@@ -40,16 +40,16 @@ For durable storage:
 === "Python"
 
     ```python
-    import graphos
+    import grafeo
 
     # Persistent database
-    db = graphos.Database(path="my_graph.db")
+    db = grafeo.Database(path="my_graph.db")
     ```
 
 === "Rust"
 
     ```rust
-    use graphos::Database;
+    use grafeo::Database;
 
     let db = Database::open("my_graph.db")?;
     ```
@@ -63,7 +63,7 @@ Control the maximum memory usage:
 === "Python"
 
     ```python
-    db = graphos.Database(
+    db = grafeo.Database(
         path="my_graph.db",
         memory_limit=4 * 1024 * 1024 * 1024  # 4 GB
     )
@@ -72,7 +72,7 @@ Control the maximum memory usage:
 === "Rust"
 
     ```rust
-    use graphos::{Database, Config};
+    use grafeo::{Database, Config};
 
     let config = Config::builder()
         .memory_limit(4 * 1024 * 1024 * 1024)  // 4 GB
@@ -88,7 +88,7 @@ Configure parallelism:
 === "Python"
 
     ```python
-    db = graphos.Database(
+    db = grafeo.Database(
         path="my_graph.db",
         threads=8
     )
@@ -97,7 +97,7 @@ Configure parallelism:
 === "Rust"
 
     ```rust
-    use graphos::{Database, Config};
+    use grafeo::{Database, Config};
 
     let config = Config::builder()
         .threads(8)
@@ -107,7 +107,7 @@ Configure parallelism:
     ```
 
 !!! tip "Default Thread Count"
-    By default, Graphos uses the number of available CPU cores.
+    By default, Grafeo uses the number of available CPU cores.
 
 ## Configuration Reference
 
@@ -120,7 +120,7 @@ Configure parallelism:
 
 ## Environment Variables
 
-Graphos can also be configured via environment variables:
+Grafeo can also be configured via environment variables:
 
 | Variable | Description |
 |----------|-------------|
@@ -133,7 +133,7 @@ Graphos can also be configured via environment variables:
 ### For High-Throughput Workloads
 
 ```python
-db = graphos.Database(
+db = grafeo.Database(
     path="high_throughput.db",
     memory_limit=8 * 1024 * 1024 * 1024,  # 8 GB
     threads=16
@@ -143,7 +143,7 @@ db = graphos.Database(
 ### For Low-Memory Environments
 
 ```python
-db = graphos.Database(
+db = grafeo.Database(
     path="embedded.db",
     memory_limit=256 * 1024 * 1024,  # 256 MB
     threads=2
@@ -154,7 +154,7 @@ db = graphos.Database(
 
 ```python
 # Multiple read replicas can be opened read-only
-db = graphos.Database(
+db = grafeo.Database(
     path="replica.db",
     read_only=True
 )
@@ -162,5 +162,5 @@ db = graphos.Database(
 
 ## Next Steps
 
-- [User Guide](../user-guide/index.md) - Learn more about using Graphos
-- [Architecture](../architecture/index.md) - Understand how Graphos works
+- [User Guide](../user-guide/index.md) - Learn more about using Grafeo
+- [Architecture](../architecture/index.md) - Understand how Grafeo works

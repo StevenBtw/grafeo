@@ -8,7 +8,7 @@ tags:
 
 # Cypher vs GQL Syntax
 
-Both Cypher and GQL are supported in Graphos. This page documents the syntax differences for users who want to understand both or switch between them.
+Both Cypher and GQL are supported in Grafeo. This page documents the syntax differences for users who want to understand both or switch between them.
 
 ## Creating Nodes
 

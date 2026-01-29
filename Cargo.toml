@@ -1,12 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/graphos",
-    "crates/graphos-common",
-    "crates/graphos-core",
-    "crates/graphos-adapters",
-    "crates/graphos-engine",
-    "crates/graphos-python",
+    "crates/grafeo",
+    "crates/grafeo-common",
+    "crates/grafeo-core",
+    "crates/grafeo-adapters",
+    "crates/grafeo-engine",
+    "crates/grafeo-python",
 ]
 
 [workspace.package]
@@ -14,17 +14,17 @@ version = "0.1.1"
 edition = "2024"
 rust-version = "1.91.1"
 license = "Apache-2.0"
-repository = "https://github.com/StevenBtw/graphos"
-authors = ["Graphos Contributors"]
+repository = "https://github.com/StevenBtw/grafeo"
+authors = ["Grafeo Contributors"]
 description = "A pure-Rust, high-performance, embeddable graph database"
 
 [workspace.dependencies]
 # Internal crates
-graphos-common = { path = "crates/graphos-common", version = "0.1.1" }
-graphos-core = { path = "crates/graphos-core", version = "0.1.1" }
-graphos-adapters = { path = "crates/graphos-adapters", version = "0.1.1" }
-graphos-engine = { path = "crates/graphos-engine", version = "0.1.1" }
-graphos = { path = "crates/graphos", version = "0.1.1" }
+grafeo-common = { path = "crates/grafeo-common", version = "0.1.1" }
+grafeo-core = { path = "crates/grafeo-core", version = "0.1.1" }
+grafeo-adapters = { path = "crates/grafeo-adapters", version = "0.1.1" }
+grafeo-engine = { path = "crates/grafeo-engine", version = "0.1.1" }
+grafeo = { path = "crates/grafeo", version = "0.1.1" }
 
 # Error handling
 thiserror = "2.0"

@@ -38,7 +38,7 @@ pub trait StorageBackend: Send + Sync {
 ## Custom Backend Example
 
 ```rust
-use graphos_adapters::storage::StorageBackend;
+use grafeo_adapters::storage::StorageBackend;
 
 pub struct RedisBackend {
     client: redis::Client,
@@ -81,7 +81,7 @@ impl StorageBackend for RedisBackend {
 ## Using Custom Backend
 
 ```rust
-use graphos::{Database, Config};
+use grafeo::{Database, Config};
 
 let backend = Box::new(RedisBackend::new("redis://localhost")?);
 

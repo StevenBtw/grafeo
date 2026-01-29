@@ -1,5 +1,5 @@
 """
-Performance benchmark for Graphos optimization phases.
+Performance benchmark for Grafeo optimization phases.
 
 This benchmark tests key operations:
 1. Node/Edge insertions
@@ -15,7 +15,7 @@ import time
 import random
 import statistics
 from contextlib import contextmanager
-import graphos
+import grafeo
 
 
 @contextmanager
@@ -45,7 +45,7 @@ def run_benchmark(node_count=100_000, edge_count=500_000, warmup=True):
     print(f"Nodes: {node_count:,}  Edges: {edge_count:,}")
     print("=" * 60)
 
-    db = graphos.GraphosDB()
+    db = grafeo.GrafeoDB()
 
     # ============================================================
     # 1. INSERTION BENCHMARK

@@ -1,6 +1,6 @@
 ---
 title: Persistent Storage
-description: Using Graphos with durable storage.
+description: Using Grafeo with durable storage.
 tags:
   - persistence
   - storage
@@ -15,15 +15,15 @@ Persistent mode stores data durably on disk.
 === "Python"
 
     ```python
-    import graphos
+    import grafeo
 
-    db = graphos.Database(path="my_graph.db")
+    db = grafeo.Database(path="my_graph.db")
     ```
 
 === "Rust"
 
     ```rust
-    use graphos::Database;
+    use grafeo::Database;
 
     let db = Database::open("my_graph.db")?;
     ```
@@ -46,7 +46,7 @@ my_graph.db/
 ## Configuration
 
 ```python
-db = graphos.Database(
+db = grafeo.Database(
     path="my_graph.db",
     # Sync mode: 'full' (default), 'normal', 'off'
     sync_mode='full'
@@ -63,13 +63,13 @@ db = graphos.Database(
 
 ```python
 # First session
-db = graphos.Database(path="my_graph.db")
+db = grafeo.Database(path="my_graph.db")
 with db.session() as s:
     s.execute("INSERT (:Person {name: 'Alice'})")
 db.close()
 
 # Later session - data persists
-db = graphos.Database(path="my_graph.db")
+db = grafeo.Database(path="my_graph.db")
 with db.session() as s:
     result = s.execute("MATCH (p:Person) RETURN p.name")
     # Returns 'Alice'

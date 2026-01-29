@@ -76,7 +76,7 @@ jobs:
         if: matrix.archive == 'tar.gz'
         run: |
           cd target/${{ matrix.target }}/release
-          tar czvf ../../../graphos-${{ github.ref_name }}-${{ matrix.target }}.tar.gz graphos* || true
+          tar czvf ../../../grafeo-${{ github.ref_name }}-${{ matrix.target }}.tar.gz grafeo* || true
           cd ../../..
 
       - name: Package (Windows)
@@ -84,7 +84,7 @@ jobs:
         shell: pwsh
         run: |
           cd target/${{ matrix.target }}/release
-          Compress-Archive -Path graphos*.exe -DestinationPath ../../../graphos-${{ github.ref_name }}-${{ matrix.target }}.zip
+          Compress-Archive -Path grafeo*.exe -DestinationPath ../../../grafeo-${{ github.ref_name }}-${{ matrix.target }}.zip
           cd ../../..
 
       - name: Upload Release Asset
@@ -93,8 +93,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./graphos-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive }}
-          asset_name: graphos-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive }}
+          asset_path: ./grafeo-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive }}
+          asset_name: grafeo-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive }}
           asset_content_type: ${{ matrix.archive == 'zip' && 'application/zip' || 'application/gzip' }}
 
   # Publish crates to crates.io
@@ -108,34 +108,34 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Publish graphos-common
-        run: cargo publish -p graphos-common --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish grafeo-common
+        run: cargo publish -p grafeo-common --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
 
       - name: Wait for crates.io
         run: sleep 30
 
-      - name: Publish graphos-core
-        run: cargo publish -p graphos-core --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish grafeo-core
+        run: cargo publish -p grafeo-core --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
 
       - name: Wait for crates.io
         run: sleep 30
 
-      - name: Publish graphos-adapters
-        run: cargo publish -p graphos-adapters --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish grafeo-adapters
+        run: cargo publish -p grafeo-adapters --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
 
       - name: Wait for crates.io
         run: sleep 30
 
-      - name: Publish graphos-engine
-        run: cargo publish -p graphos-engine --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish grafeo-engine
+        run: cargo publish -p grafeo-engine --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
 
       - name: Wait for crates.io
         run: sleep 30
 
-      - name: Publish graphos
-        run: cargo publish -p graphos --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish grafeo
+        run: cargo publish -p grafeo --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true

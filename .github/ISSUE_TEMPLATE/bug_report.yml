@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in Graphos
+description: Report a bug in Grafeo
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
@@ -60,8 +60,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Graphos Version
-      description: What version of Graphos are you using?
+      label: Grafeo Version
+      description: What version of Grafeo are you using?
       placeholder: "0.1.0"
     validations:
       required: true

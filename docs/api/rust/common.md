@@ -1,19 +1,19 @@
 ---
-title: graphos-common
+title: grafeo-common
 description: Foundation types crate.
 tags:
   - api
   - rust
 ---
 
-# graphos-common
+# grafeo-common
 
 Foundation types, memory allocators, and utilities.
 
 ## Types
 
 ```rust
-use graphos_common::types::{NodeId, EdgeId, Value, LogicalType};
+use grafeo_common::types::{NodeId, EdgeId, Value, LogicalType};
 ```
 
 ### NodeId / EdgeId
@@ -42,7 +42,7 @@ let t = LogicalType::List(Box::new(LogicalType::Int64));
 ## Memory
 
 ```rust
-use graphos_common::memory::{Arena, Pool};
+use grafeo_common::memory::{Arena, Pool};
 
 let arena = Arena::new();
 let data = arena.alloc(MyStruct::new());
@@ -51,7 +51,7 @@ let data = arena.alloc(MyStruct::new());
 ## Utilities
 
 ```rust
-use graphos_common::utils::{FxHashMap, FxHashSet};
+use grafeo_common::utils::{FxHashMap, FxHashSet};
 
 let map: FxHashMap<String, i64> = FxHashMap::default();
 ```

@@ -13,7 +13,7 @@ Compute statistics that describe the overall graph structure.
 ## Basic Metrics
 
 ```python
-from graphos.algorithms import graph_metrics
+from grafeo.algorithms import graph_metrics
 
 metrics = graph_metrics(db)
 
@@ -28,7 +28,7 @@ print(f"Avg Degree: {metrics.average_degree:.2f}")
 Ratio of actual edges to possible edges.
 
 ```python
-from graphos.algorithms import density
+from grafeo.algorithms import density
 
 d = density(db)
 # 0 = no edges, 1 = complete graph
@@ -39,7 +39,7 @@ d = density(db)
 Longest shortest path in the graph.
 
 ```python
-from graphos.algorithms import diameter
+from grafeo.algorithms import diameter
 
 d = diameter(db)
 print(f"Graph diameter: {d}")
@@ -50,7 +50,7 @@ print(f"Graph diameter: {d}")
 Minimum eccentricity (shortest max distance from any node).
 
 ```python
-from graphos.algorithms import radius
+from grafeo.algorithms import radius
 
 r = radius(db)
 ```
@@ -60,7 +60,7 @@ r = radius(db)
 Measure of how clustered the graph is.
 
 ```python
-from graphos.algorithms import clustering_coefficient
+from grafeo.algorithms import clustering_coefficient
 
 # Global clustering coefficient
 global_cc = clustering_coefficient(db, method='global')
@@ -75,7 +75,7 @@ avg_cc = clustering_coefficient(db, method='average')
 ## Degree Distribution
 
 ```python
-from graphos.algorithms import degree_distribution
+from grafeo.algorithms import degree_distribution
 
 dist = degree_distribution(db)
 

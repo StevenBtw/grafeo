@@ -1,0 +1,23 @@
+//! # grafeo-common
+//!
+//! Foundation layer for Grafeo: types, memory allocators, and utilities.
+//!
+//! This crate provides the fundamental building blocks used by all other
+//! Grafeo crates. It has no internal dependencies and should be kept minimal.
+//!
+//! ## Modules
+//!
+//! - [`types`] - Core type definitions (NodeId, EdgeId, Value, etc.)
+//! - [`memory`] - Memory allocators (arena, bump, pool)
+//! - [`mvcc`] - MVCC primitives (VersionChain, VersionInfo)
+//! - [`utils`] - Utility functions and helpers (hashing, errors)
+
+pub mod memory;
+pub mod mvcc;
+pub mod types;
+pub mod utils;
+
+// Re-export commonly used types at crate root
+pub use mvcc::{Version, VersionChain, VersionInfo};
+pub use types::{EdgeId, EpochId, LogicalType, NodeId, PropertyKey, Timestamp, TxId, Value};
+pub use utils::error::{Error, Result};

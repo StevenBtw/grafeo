@@ -18,7 +18,7 @@ Find clusters and communities within graphs.
 Fast modularity-based community detection.
 
 ```python
-from graphos.algorithms import louvain
+from grafeo.algorithms import louvain
 
 communities = louvain(db,
     resolution=1.0
@@ -36,7 +36,7 @@ communities = louvain(db,
 Semi-supervised community detection.
 
 ```python
-from graphos.algorithms import label_propagation
+from grafeo.algorithms import label_propagation
 
 communities = label_propagation(db,
     max_iterations=100
@@ -48,7 +48,7 @@ communities = label_propagation(db,
 Find disconnected subgraphs.
 
 ```python
-from graphos.algorithms import connected_components
+from grafeo.algorithms import connected_components
 
 components = connected_components(db)
 
@@ -62,7 +62,7 @@ for i, comp in enumerate(components):
 For directed graphs.
 
 ```python
-from graphos.algorithms import strongly_connected_components
+from grafeo.algorithms import strongly_connected_components
 
 sccs = strongly_connected_components(db)
 ```
@@ -72,7 +72,7 @@ sccs = strongly_connected_components(db)
 Count triangles for clustering analysis.
 
 ```python
-from graphos.algorithms import triangle_count
+from grafeo.algorithms import triangle_count
 
 triangles = triangle_count(db)
 print(f"Total triangles: {triangles['total']}")

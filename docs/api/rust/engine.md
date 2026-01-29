@@ -1,19 +1,19 @@
 ---
-title: graphos-engine
+title: grafeo-engine
 description: Database engine crate.
 tags:
   - api
   - rust
 ---
 
-# graphos-engine
+# grafeo-engine
 
 Main database facade and coordination.
 
 ## Database
 
 ```rust
-use graphos_engine::{Database, Config};
+use grafeo_engine::{Database, Config};
 
 // In-memory
 let db = Database::open_in_memory()?;

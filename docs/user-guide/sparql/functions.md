@@ -267,10 +267,10 @@ SELECT (STRUUID() AS ?uuidString)
 
 ## Custom Functions
 
-Graphos supports custom functions via plugins:
+Grafeo supports custom functions via plugins:
 
 ```sparql
-PREFIX gfn: <http://graphos.tech/functions/>
+PREFIX gfn: <http://grafeo.tech/functions/>
 
 SELECT ?result
 WHERE {

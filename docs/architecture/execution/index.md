@@ -5,7 +5,7 @@ description: Query execution architecture.
 
 # Execution Engine
 
-Graphos uses a push-based, vectorized execution engine.
+Grafeo uses a push-based, vectorized execution engine.
 
 ## Overview
 

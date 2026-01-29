@@ -1,6 +1,6 @@
 ---
 title: In-Memory Mode
-description: Using Graphos with in-memory storage.
+description: Using Grafeo with in-memory storage.
 tags:
   - persistence
   - in-memory
@@ -15,16 +15,16 @@ In-memory mode provides the fastest performance by keeping all data in RAM.
 === "Python"
 
     ```python
-    import graphos
+    import grafeo
 
     # Default is in-memory
-    db = graphos.Database()
+    db = grafeo.Database()
     ```
 
 === "Rust"
 
     ```rust
-    use graphos::Database;
+    use grafeo::Database;
 
     let db = Database::open_in_memory()?;
     ```
@@ -47,7 +47,7 @@ In-memory mode provides the fastest performance by keeping all data in RAM.
 
 ```python
 # Set memory limit for in-memory database
-db = graphos.Database(
+db = grafeo.Database(
     memory_limit=1 * 1024 * 1024 * 1024  # 1 GB
 )
 ```

@@ -191,14 +191,14 @@ This guide compares GraphQL (the API query language) with GQL (ISO/IEC 39075 gra
 | Mutations | `createX`/`deleteX` | INSERT, SET, DELETE |
 | Joins | Nesting only | Arbitrary patterns |
 
-## Using Both in Graphos
+## Using Both in Grafeo
 
-Graphos supports both languages, allowing different use cases:
+Grafeo supports both languages, allowing different use cases:
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.GraphosDB()
+db = grafeo.GrafeoDB()
 
 # Create data with GQL (full control)
 db.execute("INSERT (:Person {name: 'Alice', age: 30})")

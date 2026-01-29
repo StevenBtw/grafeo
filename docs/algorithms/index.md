@@ -1,11 +1,11 @@
 ---
 title: Graph Algorithms
-description: Built-in graph algorithms in Graphos.
+description: Built-in graph algorithms in Grafeo.
 ---
 
 # Graph Algorithms
 
-Graphos includes a library of built-in graph algorithms for common analysis tasks.
+Grafeo includes a library of built-in graph algorithms for common analysis tasks.
 
 !!! note "Coming Soon"
     The algorithms module is under active development. This page documents the planned API and available algorithms.
@@ -80,7 +80,7 @@ Graphos includes a library of built-in graph algorithms for common analysis task
 
 ```sql
 -- PageRank
-CALL graphos.pagerank({
+CALL grafeo.pagerank({
     node_label: 'Page',
     relationship_type: 'LINKS',
     damping: 0.85,
@@ -96,10 +96,10 @@ LIMIT 10
 ### From Python
 
 ```python
-import graphos
-from graphos.algorithms import pagerank, shortest_path
+import grafeo
+from grafeo.algorithms import pagerank, shortest_path
 
-db = graphos.Database()
+db = grafeo.Database()
 
 # Run PageRank
 scores = pagerank(db, damping=0.85, iterations=20)
@@ -114,7 +114,7 @@ print(f"Path length: {len(path)}")
 ### From Rust
 
 ```rust
-use graphos::algorithms::{pagerank, PageRankConfig};
+use grafeo::algorithms::{pagerank, PageRankConfig};
 
 let config = PageRankConfig {
     damping: 0.85,
@@ -146,7 +146,7 @@ pagerank(db,
 
 ## Custom Algorithms
 
-See [Extending Graphos](../user-guide/extending/plugins.md) to learn how to add custom algorithms.
+See [Extending Grafeo](../user-guide/extending/plugins.md) to learn how to add custom algorithms.
 
 ## Performance Considerations
 

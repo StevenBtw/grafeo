@@ -1,19 +1,19 @@
 ---
 title: Python API
-description: Using Graphos from Python.
+description: Using Grafeo from Python.
 ---
 
 # Python API
 
-Graphos provides first-class Python support through the `pygraphos` package.
+Grafeo provides first-class Python support through the `grafeo` package.
 
 ## Quick Start
 
 ```python
-import graphos
+import grafeo
 
 # Create a database
-db = graphos.Database()
+db = grafeo.Database()
 
 # Execute queries
 with db.session() as session:

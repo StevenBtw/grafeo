@@ -1,6 +1,6 @@
 ---
 title: Code Style
-description: Coding standards for Graphos.
+description: Coding standards for Grafeo.
 tags:
   - contributing
 ---

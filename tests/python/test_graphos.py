@@ -1,7 +1,7 @@
 """
-Functional tests for Graphos Python bindings.
+Functional tests for Grafeo Python bindings.
 
-Run with: pytest tests/python/test_graphos.py -v
+Run with: pytest tests/python/test_grafeo.py -v
 """
 
 import pytest
@@ -14,9 +14,9 @@ from synthetic_data import (
 )
 
 
-# Try to import graphos - skip tests if not available
+# Try to import grafeo - skip tests if not available
 try:
-    from graphos import GraphosDB
+    from grafeo import GrafeoDB
     GRAPHOS_AVAILABLE = True
 except ImportError:
     GRAPHOS_AVAILABLE = False
@@ -24,7 +24,7 @@ except ImportError:
 
 pytestmark = pytest.mark.skipif(
     not GRAPHOS_AVAILABLE,
-    reason="Graphos Python bindings not installed. Run: cd crates/graphos-python && maturin develop"
+    reason="Grafeo Python bindings not installed. Run: cd crates/grafeo-python && maturin develop"
 )
 
 
@@ -33,7 +33,7 @@ class TestBasicOperations:
 
     def setup_method(self):
         """Create a fresh database for each test."""
-        self.db = GraphosDB()
+        self.db = GrafeoDB()
 
     def test_create_node(self):
         """Test creating a simple node."""
@@ -122,7 +122,7 @@ class TestQueryExecution:
 
     def setup_method(self):
         """Create a database with some test data."""
-        self.db = GraphosDB()
+        self.db = GrafeoDB()
 
         # Create test nodes
         self.alice = self.db.create_node(["Person"], {"name": "Alice", "age": 30})
@@ -198,7 +198,7 @@ class TestSyntheticDataLoading:
 
     def test_load_social_network(self):
         """Test loading a social network dataset."""
-        db = GraphosDB()
+        db = GrafeoDB()
         gen = SocialNetworkGenerator(num_nodes=100, avg_edges_per_node=5, seed=42)
         node_count, edge_count = load_data_into_db(db, gen)
 
@@ -210,7 +210,7 @@ class TestSyntheticDataLoading:
 
     def test_load_ldbc_like(self):
         """Test loading an LDBC-like dataset."""
-        db = GraphosDB()
+        db = GrafeoDB()
         gen = LDBCLikeGenerator(scale_factor=0.1, seed=42)
         node_count, edge_count = load_data_into_db(db, gen)
 
@@ -219,7 +219,7 @@ class TestSyntheticDataLoading:
 
     def test_load_tree(self):
         """Test loading a tree dataset."""
-        db = GraphosDB()
+        db = GrafeoDB()
         gen = TreeGenerator(depth=3, branching_factor=2, seed=42)
         node_count, edge_count = load_data_into_db(db, gen)
 
@@ -229,7 +229,7 @@ class TestSyntheticDataLoading:
 
     def test_query_social_network(self):
         """Test querying a social network dataset."""
-        db = GraphosDB()
+        db = GrafeoDB()
         gen = SocialNetworkGenerator(num_nodes=50, avg_edges_per_node=3, seed=42)
         load_data_into_db(db, gen)
 
@@ -247,7 +247,7 @@ class TestSyntheticDataLoading:
 
     def test_query_ldbc_relationships(self):
         """Test querying different relationship types in LDBC data."""
-        db = GraphosDB()
+        db = GrafeoDB()
         gen = LDBCLikeGenerator(scale_factor=0.1, seed=42)
         load_data_into_db(db, gen)
 
@@ -271,7 +271,7 @@ class TestTransactions:
 
     def test_transaction_commit(self):
         """Test transaction commit using tx.execute()."""
-        db = GraphosDB()
+        db = GrafeoDB()
 
         with db.begin_transaction() as tx:
             # Use tx.execute() for proper transactional semantics
@@ -285,7 +285,7 @@ class TestTransactions:
 
     def test_transaction_auto_commit(self):
         """Test that transactions auto-commit on success."""
-        db = GraphosDB()
+        db = GrafeoDB()
 
         with db.begin_transaction() as tx:
             # Use tx.execute() for proper transactional semantics
@@ -298,7 +298,7 @@ class TestTransactions:
 
     def test_transaction_rollback(self):
         """Test that transaction rollback discards changes."""
-        db = GraphosDB()
+        db = GrafeoDB()
 
         # First, verify database is empty
         result = db.execute("MATCH (n:Person) RETURN n")
@@ -316,7 +316,7 @@ class TestTransactions:
 
     def test_transaction_is_active(self):
         """Test transaction is_active property."""
-        db = GraphosDB()
+        db = GrafeoDB()
 
         tx = db.begin_transaction()
         assert tx.is_active is True
@@ -331,7 +331,7 @@ class TestTransactions:
         that operates outside transaction scope. For transactional
         mutations, use tx.execute() with INSERT/CREATE queries.
         """
-        db = GraphosDB()
+        db = GrafeoDB()
 
         with db.begin_transaction() as tx:
             # db.create_node() bypasses the transaction - commits immediately
@@ -349,20 +349,20 @@ class TestEdgeCases:
 
     def test_empty_label_list(self):
         """Test creating a node with no labels."""
-        db = GraphosDB()
+        db = GrafeoDB()
         node = db.create_node([], {"name": "NoLabel"})
         assert node is not None
 
     def test_empty_properties(self):
         """Test creating a node with no properties."""
-        db = GraphosDB()
+        db = GrafeoDB()
         node = db.create_node(["Empty"], {})
         assert node is not None
         assert len(node.properties()) == 0
 
     def test_unicode_properties(self):
         """Test unicode property values."""
-        db = GraphosDB()
+        db = GrafeoDB()
         node = db.create_node(["Person"], {
             "name": "Alice",
             "greeting": "Hello World!",
@@ -371,14 +371,14 @@ class TestEdgeCases:
 
     def test_large_property_value(self):
         """Test large string property values."""
-        db = GraphosDB()
+        db = GrafeoDB()
         large_value = "x" * 10000
         node = db.create_node(["Data"], {"content": large_value})
         assert len(node.properties().get("content", "")) == 10000
 
     def test_numeric_property_types(self):
         """Test different numeric property types."""
-        db = GraphosDB()
+        db = GrafeoDB()
         node = db.create_node(["Numbers"], {
             "int_val": 42,
             "float_val": 3.14159,
@@ -394,7 +394,7 @@ class TestPerformanceSmoke:
 
     def test_bulk_node_insert(self):
         """Test inserting many nodes."""
-        db = GraphosDB()
+        db = GrafeoDB()
 
         for i in range(100):
             db.create_node(["Person"], {"name": f"Person{i}", "idx": i})
@@ -404,7 +404,7 @@ class TestPerformanceSmoke:
 
     def test_bulk_edge_insert(self):
         """Test inserting many edges."""
-        db = GraphosDB()
+        db = GrafeoDB()
 
         # Create nodes first
         node_ids = []

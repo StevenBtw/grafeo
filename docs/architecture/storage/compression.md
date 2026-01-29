@@ -8,7 +8,7 @@ tags:
 
 # Compression
 
-Graphos uses type-specific compression for efficient storage.
+Grafeo uses type-specific compression for efficient storage.
 
 ## Compression Strategies
 
@@ -53,7 +53,7 @@ Packed: 4 bits per value instead of 64
 
 ## Compression Selection
 
-Graphos automatically selects compression based on data characteristics:
+Grafeo automatically selects compression based on data characteristics:
 
 1. Analyze sample of data
 2. Estimate compression ratio for each strategy

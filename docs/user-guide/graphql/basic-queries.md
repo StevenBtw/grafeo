@@ -8,7 +8,7 @@ tags:
 
 # Basic Queries
 
-This guide covers the fundamentals of querying graph data with GraphQL in Graphos.
+This guide covers the fundamentals of querying graph data with GraphQL in Grafeo.
 
 ## Anonymous Queries
 
@@ -62,7 +62,7 @@ Select the specific properties you want returned:
 
 ## Type-to-Label Mapping
 
-The root field name maps to a node label in the graph. Graphos automatically capitalizes the first letter:
+The root field name maps to a node label in the graph. Grafeo automatically capitalizes the first letter:
 
 | GraphQL Root Field | Node Label |
 |-------------------|------------|
@@ -173,9 +173,9 @@ Combine filtering, ordering, and pagination:
 ## Python Example
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.GraphosDB()
+db = grafeo.GrafeoDB()
 
 # Create data
 db.execute("INSERT (:Person {name: 'Alice', age: 30})")
@@ -206,9 +206,9 @@ result = db.execute_graphql("""
 ## Rust Example
 
 ```rust
-use graphos_engine::GraphosDB;
+use grafeo_engine::GrafeoDB;
 
-let db = GraphosDB::new_in_memory();
+let db = GrafeoDB::new_in_memory();
 db.execute("INSERT (:Person {name: 'Alice', age: 30})").unwrap();
 
 let result = db.execute_graphql(r#"

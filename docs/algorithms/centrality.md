@@ -18,7 +18,7 @@ Centrality algorithms identify the most important nodes in a graph.
 Measures node importance based on incoming links.
 
 ```python
-from graphos.algorithms import pagerank
+from grafeo.algorithms import pagerank
 
 scores = pagerank(db,
     damping=0.85,
@@ -45,7 +45,7 @@ scores = pagerank(db,
 Measures how often a node lies on shortest paths.
 
 ```python
-from graphos.algorithms import betweenness_centrality
+from grafeo.algorithms import betweenness_centrality
 
 scores = betweenness_centrality(db)
 ```
@@ -61,7 +61,7 @@ scores = betweenness_centrality(db)
 Measures average distance to all other nodes.
 
 ```python
-from graphos.algorithms import closeness_centrality
+from grafeo.algorithms import closeness_centrality
 
 scores = closeness_centrality(db)
 ```
@@ -77,7 +77,7 @@ scores = closeness_centrality(db)
 Simple count of connections.
 
 ```python
-from graphos.algorithms import degree_centrality
+from grafeo.algorithms import degree_centrality
 
 scores = degree_centrality(db,
     direction='both'  # 'in', 'out', or 'both'
@@ -95,7 +95,7 @@ scores = degree_centrality(db,
 Importance based on neighbor importance.
 
 ```python
-from graphos.algorithms import eigenvector_centrality
+from grafeo.algorithms import eigenvector_centrality
 
 scores = eigenvector_centrality(db)
 ```

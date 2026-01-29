@@ -1,11 +1,11 @@
 ---
 title: GQL Query Language
-description: Learn the GQL query language for Graphos.
+description: Learn the GQL query language for Grafeo.
 ---
 
 # GQL Query Language
 
-GQL (Graph Query Language) is the ISO standard for querying property graphs (ISO/IEC 39075). Graphos implements GQL as its primary query language.
+GQL (Graph Query Language) is the ISO standard for querying property graphs (ISO/IEC 39075). Grafeo implements GQL as its primary query language.
 
 ## Overview
 

@@ -7,7 +7,7 @@ tags:
 
 # System Overview
 
-Graphos is designed as a high-performance, embeddable graph database.
+Grafeo is designed as a high-performance, embeddable graph database.
 
 ## Design Goals
 

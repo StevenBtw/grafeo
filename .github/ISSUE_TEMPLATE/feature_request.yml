@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature for Graphos
+description: Suggest a new feature for Grafeo
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
@@ -36,7 +36,7 @@ body:
     id: area
     attributes:
       label: Feature Area
-      description: Which area of Graphos does this feature relate to?
+      description: Which area of Grafeo does this feature relate to?
       options:
         - Query Language (GQL/Cypher)
         - Storage Engine

@@ -1,12 +1,12 @@
 ---
-title: graphos.QueryResult
+title: grafeo.QueryResult
 description: QueryResult class reference.
 tags:
   - api
   - python
 ---
 
-# graphos.QueryResult
+# grafeo.QueryResult
 
 Query result iterator.
 

@@ -8,7 +8,7 @@ tags:
 
 # Isolation Levels
 
-Graphos supports Snapshot Isolation by default.
+Grafeo supports Snapshot Isolation by default.
 
 ## Snapshot Isolation
 

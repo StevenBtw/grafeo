@@ -1,12 +1,12 @@
 ---
-title: graphos.Transaction
+title: grafeo.Transaction
 description: Transaction class reference.
 tags:
   - api
   - python
 ---
 
-# graphos.Transaction
+# grafeo.Transaction
 
 Transaction management.
 

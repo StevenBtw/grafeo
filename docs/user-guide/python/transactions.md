@@ -8,7 +8,7 @@ tags:
 
 # Transactions
 
-Graphos supports ACID transactions with snapshot isolation.
+Grafeo supports ACID transactions with snapshot isolation.
 
 ## Implicit Transactions
 
@@ -67,7 +67,7 @@ with db.session() as session:
 
 ## Isolation Levels
 
-Graphos uses snapshot isolation by default:
+Grafeo uses snapshot isolation by default:
 
 ```python
 # Session 1 sees a consistent snapshot

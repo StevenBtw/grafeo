@@ -121,9 +121,9 @@ g.V().has('name', 'Alice').property(set, 'tag', 'developer')
 ## Python Example
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.GraphosDB()
+db = grafeo.GrafeoDB()
 
 # Create data
 db.execute("INSERT (:Person {name: 'Alice', age: 30, city: 'Seattle'})")

@@ -5,11 +5,11 @@ description: Query your graph data using GraphQL syntax.
 
 # GraphQL Query Language
 
-GraphQL is a query language for APIs developed by Facebook. Graphos supports GraphQL as an optional query language, allowing you to query graph data using familiar GraphQL syntax.
+GraphQL is a query language for APIs developed by Facebook. Grafeo supports GraphQL as an optional query language, allowing you to query graph data using familiar GraphQL syntax.
 
 ## Overview
 
-GraphQL provides a schema-driven approach to querying data. In Graphos, node labels map to GraphQL types, and relationships map to nested fields.
+GraphQL provides a schema-driven approach to querying data. In Grafeo, node labels map to GraphQL types, and relationships map to nested fields.
 
 ## Enabling GraphQL
 
@@ -18,13 +18,13 @@ GraphQL support is optional and requires a feature flag:
 === "Rust"
 
     ```bash
-    cargo add graphos-engine --features graphql
+    cargo add grafeo-engine --features graphql
     ```
 
 === "Python"
 
     ```bash
-    uv add pygraphos[graphql]
+    uv add grafeo[graphql]
     ```
 
 ## Quick Reference
@@ -287,9 +287,9 @@ mutation {
 ### Mutation Examples in Python
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.GraphosDB()
+db = grafeo.GrafeoDB()
 
 # Create a node with GraphQL
 result = db.execute_graphql('''
@@ -322,9 +322,9 @@ mutation {
 ## Python Usage
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.GraphosDB()
+db = grafeo.GrafeoDB()
 
 # Create some data using GQL
 db.execute("INSERT (:Person {name: 'Alice', age: 30})")
@@ -354,9 +354,9 @@ for row in result:
 ## Rust Usage
 
 ```rust
-use graphos_engine::GraphosDB;
+use grafeo_engine::GrafeoDB;
 
-let db = GraphosDB::new_in_memory();
+let db = GrafeoDB::new_in_memory();
 
 // Create data
 db.execute("INSERT (:Person {name: 'Alice'})").unwrap();

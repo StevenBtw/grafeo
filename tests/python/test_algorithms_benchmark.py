@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 """
-Test and benchmark Graphos graph algorithms.
+Test and benchmark Grafeo graph algorithms.
 
 This script tests the functionality of all algorithms and benchmarks
 their performance comparing:
 - Native NetworkX
-- Graphos (via NetworkX adapter)
+- Grafeo (via NetworkX adapter)
 - Native solvOR
-- Graphos (via solvOR adapter)
+- Grafeo (via solvOR adapter)
 """
 
 import time
 import random
 from typing import Callable, Any
 
-# Check if graphos is available
+# Check if grafeo is available
 try:
-    import graphos
+    import grafeo
     GRAPHOS_AVAILABLE = True
 except ImportError:
     GRAPHOS_AVAILABLE = False
-    print("WARNING: graphos not installed")
+    print("WARNING: grafeo not installed")
 
 # Check if networkx is available
 try:
@@ -39,7 +39,7 @@ except ImportError:
     print("WARNING: solvor not installed, skipping solvOR benchmarks")
 
 
-def create_test_graph(db: "graphos.GraphosDB", n_nodes: int = 100, n_edges: int = 300) -> dict:
+def create_test_graph(db: "grafeo.GrafeoDB", n_nodes: int = 100, n_edges: int = 300) -> dict:
     """Create a random graph for testing."""
     node_ids = []
     for i in range(n_nodes):
@@ -119,7 +119,7 @@ def benchmark(name: str, func: Callable, iterations: int = 3) -> float:
     return avg
 
 
-def test_traversal_algorithms(db: "graphos.GraphosDB", node_ids: list):
+def test_traversal_algorithms(db: "grafeo.GrafeoDB", node_ids: list):
     """Test traversal algorithms."""
     print("\n=== Traversal Algorithms ===")
 
@@ -148,7 +148,7 @@ def test_traversal_algorithms(db: "graphos.GraphosDB", node_ids: list):
     print("  [PASS] Traversal algorithms")
 
 
-def test_component_algorithms(db: "graphos.GraphosDB", node_ids: list):
+def test_component_algorithms(db: "grafeo.GrafeoDB", node_ids: list):
     """Test component algorithms."""
     print("\n=== Component Algorithms ===")
 
@@ -179,7 +179,7 @@ def test_component_algorithms(db: "graphos.GraphosDB", node_ids: list):
     print("  [PASS] Component algorithms")
 
 
-def test_shortest_path_algorithms(db: "graphos.GraphosDB", node_ids: list):
+def test_shortest_path_algorithms(db: "grafeo.GrafeoDB", node_ids: list):
     """Test shortest path algorithms."""
     print("\n=== Shortest Path Algorithms ===")
 
@@ -220,7 +220,7 @@ def test_shortest_path_algorithms(db: "graphos.GraphosDB", node_ids: list):
     print("  [PASS] Shortest path algorithms")
 
 
-def test_centrality_algorithms(db: "graphos.GraphosDB", node_ids: list):
+def test_centrality_algorithms(db: "grafeo.GrafeoDB", node_ids: list):
     """Test centrality algorithms."""
     print("\n=== Centrality Algorithms ===")
 
@@ -249,7 +249,7 @@ def test_centrality_algorithms(db: "graphos.GraphosDB", node_ids: list):
     print("  [PASS] Centrality algorithms")
 
 
-def test_community_algorithms(db: "graphos.GraphosDB", node_ids: list):
+def test_community_algorithms(db: "grafeo.GrafeoDB", node_ids: list):
     """Test community detection algorithms."""
     print("\n=== Community Detection ===")
 
@@ -265,7 +265,7 @@ def test_community_algorithms(db: "graphos.GraphosDB", node_ids: list):
     print("  [PASS] Community detection algorithms")
 
 
-def test_mst_algorithms(db: "graphos.GraphosDB", node_ids: list):
+def test_mst_algorithms(db: "grafeo.GrafeoDB", node_ids: list):
     """Test MST algorithms."""
     print("\n=== Minimum Spanning Tree ===")
 
@@ -280,7 +280,7 @@ def test_mst_algorithms(db: "graphos.GraphosDB", node_ids: list):
     print("  [PASS] MST algorithms")
 
 
-def test_flow_algorithms(db: "graphos.GraphosDB", node_ids: list):
+def test_flow_algorithms(db: "grafeo.GrafeoDB", node_ids: list):
     """Test network flow algorithms."""
     print("\n=== Network Flow ===")
 
@@ -298,7 +298,7 @@ def test_flow_algorithms(db: "graphos.GraphosDB", node_ids: list):
     print("  [PASS] Flow algorithms")
 
 
-def test_structure_algorithms(db: "graphos.GraphosDB", node_ids: list):
+def test_structure_algorithms(db: "grafeo.GrafeoDB", node_ids: list):
     """Test structure analysis algorithms."""
     print("\n=== Structure Analysis ===")
 
@@ -323,7 +323,7 @@ def test_structure_algorithms(db: "graphos.GraphosDB", node_ids: list):
     print("  [PASS] Structure analysis algorithms")
 
 
-def test_networkx_adapter(db: "graphos.GraphosDB"):
+def test_networkx_adapter(db: "grafeo.GrafeoDB"):
     """Test NetworkX adapter."""
     print("\n=== NetworkX Adapter ===")
 
@@ -345,7 +345,7 @@ def test_networkx_adapter(db: "graphos.GraphosDB"):
     print("  [PASS] NetworkX adapter")
 
 
-def test_solvor_adapter(db: "graphos.GraphosDB", node_ids: list):
+def test_solvor_adapter(db: "grafeo.GrafeoDB", node_ids: list):
     """Test solvOR adapter."""
     print("\n=== solvOR Adapter ===")
 
@@ -379,21 +379,21 @@ def run_benchmarks(n_nodes: int = 1000, n_edges: int = 5000):
     """Run performance benchmarks comparing all 4 implementations."""
     print(f"\n{'='*100}")
     print(f"BENCHMARKS (n={n_nodes}, e={n_edges})")
-    print(f"Comparing: NetworkX (native), Graphos-NetworkX bridge, solvOR (native), Graphos-solvOR bridge")
+    print(f"Comparing: NetworkX (native), Grafeo-NetworkX bridge, solvOR (native), Grafeo-solvOR bridge")
     print('='*100)
 
     # Seed for reproducibility
     random.seed(42)
 
-    # Create Graphos graph
-    print("\nCreating Graphos graph...")
-    db = graphos.GraphosDB()
+    # Create Grafeo graph
+    print("\nCreating Grafeo graph...")
+    db = grafeo.GrafeoDB()
     graph_info = create_test_graph(db, n_nodes, n_edges)
     node_ids = graph_info["node_ids"]
     source = node_ids[0]
     target = node_ids[n_nodes // 2]
 
-    # Get Graphos adapters
+    # Get Grafeo adapters
     nx_adapter = db.as_networkx()
     sv_adapter = db.as_solvor()
 
@@ -425,110 +425,110 @@ def run_benchmarks(n_nodes: int = 1000, n_edges: int = 5000):
     ]
 
     print("\n" + "-"*100)
-    print(f"{'Algorithm':<20} {'NetworkX':<15} {'Graphos-NX':<15} {'solvOR':<15} {'Graphos-solvOR':<15} {'Best':<15}")
+    print(f"{'Algorithm':<20} {'NetworkX':<15} {'Grafeo-NX':<15} {'solvOR':<15} {'Grafeo-solvOR':<15} {'Best':<15}")
     print("-"*100)
 
     for algo in algorithms_to_test:
         nx_native = None
-        nx_graphos = None
+        nx_grafeo = None
         sv_native = None
-        sv_graphos = None
+        sv_grafeo = None
 
         try:
             if algo == "PageRank":
                 if NETWORKX_AVAILABLE:
                     nx_native = benchmark(algo, lambda: nx.pagerank(nx_graph))
-                nx_graphos = benchmark(algo, lambda: nx_adapter.pagerank())
+                nx_grafeo = benchmark(algo, lambda: nx_adapter.pagerank())
                 if SOLVOR_AVAILABLE and solvor_graph:
                     nodes = solvor_graph["nodes"]
                     neighbors = solvor_graph["neighbors"]
                     sv_native = benchmark(algo, lambda: solvor.pagerank(nodes, neighbors))
-                sv_graphos = benchmark(algo, lambda: sv_adapter.pagerank())
+                sv_grafeo = benchmark(algo, lambda: sv_adapter.pagerank())
 
             elif algo == "Dijkstra":
                 if NETWORKX_AVAILABLE:
                     nx_native = benchmark(algo, lambda: nx.dijkstra_path(nx_graph, 0, n_nodes // 2, weight="weight"))
-                nx_graphos = benchmark(algo, lambda: nx_adapter.shortest_path(source, target, "weight"))
+                nx_grafeo = benchmark(algo, lambda: nx_adapter.shortest_path(source, target, "weight"))
                 if SOLVOR_AVAILABLE and solvor_graph:
                     neighbors_w = solvor_graph["neighbors_weighted"]
                     sv_native = benchmark(algo, lambda: solvor.dijkstra(0, n_nodes // 2, neighbors_w))
-                sv_graphos = benchmark(algo, lambda: sv_adapter.shortest_path(source, target, weight="weight"))
+                sv_grafeo = benchmark(algo, lambda: sv_adapter.shortest_path(source, target, weight="weight"))
 
             elif algo == "BFS":
                 if NETWORKX_AVAILABLE:
                     nx_native = benchmark(algo, lambda: list(nx.bfs_edges(nx_graph, 0)))
-                nx_graphos = benchmark(algo, lambda: db.algorithms.bfs(source))
+                nx_grafeo = benchmark(algo, lambda: db.algorithms.bfs(source))
                 if SOLVOR_AVAILABLE and solvor_graph:
                     neighbors = solvor_graph["neighbors"]
                     sv_native = benchmark(algo, lambda: solvor.bfs(0, None, neighbors))
-                sv_graphos = benchmark(algo, lambda: db.algorithms.bfs(source))
+                sv_grafeo = benchmark(algo, lambda: db.algorithms.bfs(source))
 
             elif algo == "DFS":
                 if NETWORKX_AVAILABLE:
                     nx_native = benchmark(algo, lambda: list(nx.dfs_edges(nx_graph, 0)))
-                nx_graphos = benchmark(algo, lambda: db.algorithms.dfs(source))
+                nx_grafeo = benchmark(algo, lambda: db.algorithms.dfs(source))
                 if SOLVOR_AVAILABLE and solvor_graph:
                     neighbors = solvor_graph["neighbors"]
                     sv_native = benchmark(algo, lambda: solvor.dfs(0, None, neighbors))
-                sv_graphos = benchmark(algo, lambda: db.algorithms.dfs(source))
+                sv_grafeo = benchmark(algo, lambda: db.algorithms.dfs(source))
 
             elif algo == "SCC":
                 if NETWORKX_AVAILABLE:
                     nx_native = benchmark(algo, lambda: list(nx.strongly_connected_components(nx_graph)))
-                nx_graphos = benchmark(algo, lambda: db.algorithms.strongly_connected_components())
+                nx_grafeo = benchmark(algo, lambda: db.algorithms.strongly_connected_components())
                 if SOLVOR_AVAILABLE and solvor_graph:
                     nodes = solvor_graph["nodes"]
                     neighbors = solvor_graph["neighbors"]
                     sv_native = benchmark(algo, lambda: solvor.strongly_connected_components(nodes, neighbors))
-                sv_graphos = benchmark(algo, lambda: sv_adapter.strongly_connected_components())
+                sv_grafeo = benchmark(algo, lambda: sv_adapter.strongly_connected_components())
 
             elif algo == "Louvain":
                 if NETWORKX_AVAILABLE:
                     nx_native = benchmark(algo, lambda: nx.community.louvain_communities(nx_graph.to_undirected()))
-                nx_graphos = benchmark(algo, lambda: db.algorithms.louvain())
+                nx_grafeo = benchmark(algo, lambda: db.algorithms.louvain())
                 if SOLVOR_AVAILABLE and solvor_graph:
                     nodes = solvor_graph["nodes"]
                     neighbors = solvor_graph["neighbors"]
                     sv_native = benchmark(algo, lambda: solvor.louvain(nodes, neighbors))
-                sv_graphos = benchmark(algo, lambda: sv_adapter.louvain())
+                sv_grafeo = benchmark(algo, lambda: sv_adapter.louvain())
 
             elif algo == "Articulation Points":
                 if NETWORKX_AVAILABLE:
                     nx_native = benchmark(algo, lambda: list(nx.articulation_points(nx_graph.to_undirected())))
-                nx_graphos = benchmark(algo, lambda: db.algorithms.articulation_points())
+                nx_grafeo = benchmark(algo, lambda: db.algorithms.articulation_points())
                 if SOLVOR_AVAILABLE and solvor_graph:
                     nodes = solvor_graph["nodes"]
                     neighbors = solvor_graph["neighbors"]
                     sv_native = benchmark(algo, lambda: solvor.articulation_points(nodes, neighbors))
-                sv_graphos = benchmark(algo, lambda: sv_adapter.articulation_points())
+                sv_grafeo = benchmark(algo, lambda: sv_adapter.articulation_points())
 
             elif algo == "Bridges":
                 if NETWORKX_AVAILABLE:
                     nx_native = benchmark(algo, lambda: list(nx.bridges(nx_graph.to_undirected())))
-                nx_graphos = benchmark(algo, lambda: db.algorithms.bridges())
+                nx_grafeo = benchmark(algo, lambda: db.algorithms.bridges())
                 if SOLVOR_AVAILABLE and solvor_graph:
                     nodes = solvor_graph["nodes"]
                     neighbors = solvor_graph["neighbors"]
                     sv_native = benchmark(algo, lambda: solvor.bridges(nodes, neighbors))
-                sv_graphos = benchmark(algo, lambda: sv_adapter.bridges())
+                sv_grafeo = benchmark(algo, lambda: sv_adapter.bridges())
 
             elif algo == "K-Core":
                 if NETWORKX_AVAILABLE:
                     nx_native = benchmark(algo, lambda: nx.core_number(nx_graph.to_undirected()))
-                nx_graphos = benchmark(algo, lambda: db.algorithms.kcore())
+                nx_grafeo = benchmark(algo, lambda: db.algorithms.kcore())
                 if SOLVOR_AVAILABLE and solvor_graph:
                     nodes = solvor_graph["nodes"]
                     neighbors = solvor_graph["neighbors"]
                     sv_native = benchmark(algo, lambda: solvor.kcore_decomposition(nodes, neighbors))
-                sv_graphos = benchmark(algo, lambda: db.algorithms.kcore())
+                sv_grafeo = benchmark(algo, lambda: db.algorithms.kcore())
 
             elif algo == "Betweenness":
                 if NETWORKX_AVAILABLE:
                     nx_native = benchmark(algo, lambda: nx.betweenness_centrality(nx_graph), iterations=1)
-                nx_graphos = benchmark(algo, lambda: db.algorithms.betweenness_centrality(), iterations=1)
+                nx_grafeo = benchmark(algo, lambda: db.algorithms.betweenness_centrality(), iterations=1)
                 # solvOR doesn't have betweenness
                 sv_native = None
-                sv_graphos = benchmark(algo, lambda: db.algorithms.betweenness_centrality(), iterations=1)
+                sv_grafeo = benchmark(algo, lambda: db.algorithms.betweenness_centrality(), iterations=1)
 
         except Exception as e:
             print(f"  {algo}: Error - {e}")
@@ -536,16 +536,16 @@ def run_benchmarks(n_nodes: int = 1000, n_edges: int = 5000):
 
         # Format output
         nx_nat_str = f"{nx_native:.2f}" if nx_native else "N/A"
-        nx_gra_str = f"{nx_graphos:.2f}" if nx_graphos else "N/A"
+        nx_gra_str = f"{nx_grafeo:.2f}" if nx_grafeo else "N/A"
         sv_nat_str = f"{sv_native:.2f}" if sv_native else "N/A"
-        sv_gra_str = f"{sv_graphos:.2f}" if sv_graphos else "N/A"
+        sv_gra_str = f"{sv_grafeo:.2f}" if sv_grafeo else "N/A"
 
         # Determine fastest
         times = []
         if nx_native: times.append(("NetworkX", nx_native))
-        if nx_graphos: times.append(("Graphos-NX", nx_graphos))
+        if nx_grafeo: times.append(("Grafeo-NX", nx_grafeo))
         if sv_native: times.append(("solvOR", sv_native))
-        if sv_graphos: times.append(("Graphos-solvOR", sv_graphos))
+        if sv_grafeo: times.append(("Grafeo-solvOR", sv_grafeo))
 
         if times:
             best_name, best_time = min(times, key=lambda x: x[1])
@@ -556,7 +556,7 @@ def run_benchmarks(n_nodes: int = 1000, n_edges: int = 5000):
         print(f"{algo:<20} {nx_nat_str:<15} {nx_gra_str:<15} {sv_nat_str:<15} {sv_gra_str:<15} {best_str:<15}")
 
     print("-"*100)
-    print("\nNote: Graphos-NX and Graphos-solvOR use native Graphos Rust algorithms via Python bridges")
+    print("\nNote: Grafeo-NX and Grafeo-solvOR use native Grafeo Rust algorithms via Python bridges")
     print("Lower time is better. 'Best' shows which implementation was fastest.")
 
 
@@ -574,14 +574,14 @@ def run_scaling_benchmark():
         (5000, 25000),
     ]
 
-    print(f"\n{'Nodes':<8} {'Edges':<8} {'NetworkX':<12} {'Graphos-NX':<12} {'solvOR':<12} {'Graphos-SV':<12} {'Fastest':<15}")
+    print(f"\n{'Nodes':<8} {'Edges':<8} {'NetworkX':<12} {'Grafeo-NX':<12} {'solvOR':<12} {'Grafeo-SV':<12} {'Fastest':<15}")
     print("-" * 80)
 
     for n_nodes, n_edges in sizes:
         random.seed(42)
 
-        # Graphos
-        db = graphos.GraphosDB()
+        # Grafeo
+        db = grafeo.GrafeoDB()
         create_test_graph(db, n_nodes, n_edges)
         nx_adapter = db.as_networkx()
         sv_adapter = db.as_solvor()
@@ -616,9 +616,9 @@ def run_scaling_benchmark():
         # Find fastest
         times = []
         if nx_time: times.append(("NetworkX", nx_time))
-        times.append(("Graphos-NX", g_nx_time))
+        times.append(("Grafeo-NX", g_nx_time))
         if sv_time: times.append(("solvOR", sv_time))
-        times.append(("Graphos-SV", g_sv_time))
+        times.append(("Grafeo-SV", g_sv_time))
         best_name, best_time = min(times, key=lambda x: x[1])
 
         print(f"{n_nodes:<8} {n_edges:<8} {nx_str:<12} {g_nx_str:<12} {sv_str:<12} {g_sv_str:<12} {best_name:<15}")
@@ -626,7 +626,7 @@ def run_scaling_benchmark():
 
 def main():
     if not GRAPHOS_AVAILABLE:
-        print("ERROR: graphos package not available")
+        print("ERROR: grafeo package not available")
         return
 
     print("="*100)
@@ -635,7 +635,7 @@ def main():
 
     # Create test graph
     random.seed(42)
-    db = graphos.GraphosDB()
+    db = grafeo.GrafeoDB()
     graph_info = create_test_graph(db, n_nodes=100, n_edges=300)
     node_ids = graph_info["node_ids"]
 

@@ -1,11 +1,11 @@
-"""Pytest fixtures for Graphos Python tests."""
+"""Pytest fixtures for Grafeo Python tests."""
 
 import pytest
 import random
 
-# Try to import graphos
+# Try to import grafeo
 try:
-    import graphos
+    import grafeo
     GRAPHOS_AVAILABLE = True
 except ImportError:
     GRAPHOS_AVAILABLE = False
@@ -13,10 +13,10 @@ except ImportError:
 
 @pytest.fixture
 def db():
-    """Create a fresh in-memory GraphosDB instance."""
+    """Create a fresh in-memory GrafeoDB instance."""
     if not GRAPHOS_AVAILABLE:
-        pytest.skip("graphos not installed")
-    return graphos.GraphosDB()
+        pytest.skip("grafeo not installed")
+    return grafeo.GrafeoDB()
 
 
 @pytest.fixture

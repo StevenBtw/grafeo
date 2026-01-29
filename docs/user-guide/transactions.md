@@ -1,13 +1,13 @@
-# Transactions in Graphos
+# Transactions in Grafeo
 
-Graphos provides ACID transactions with **Snapshot Isolation** semantics. This guide explains how transactions work, their guarantees, and important limitations to be aware of.
+Grafeo provides ACID transactions with **Snapshot Isolation** semantics. This guide explains how transactions work, their guarantees, and important limitations to be aware of.
 
 ## Quick Start
 
 ```python
-from graphos import GraphosDB
+from grafeo import GrafeoDB
 
-db = GraphosDB()
+db = GrafeoDB()
 
 # Explicit transaction
 with db.begin_transaction() as tx:
@@ -21,7 +21,7 @@ db.execute("CREATE (n:Person {name: 'Charlie'})")  # Commits immediately
 
 ## Isolation Level: Snapshot Isolation
 
-Graphos implements **Snapshot Isolation (SI)**, a widely-used isolation level that provides strong consistency while maintaining high concurrency.
+Grafeo implements **Snapshot Isolation (SI)**, a widely-used isolation level that provides strong consistency while maintaining high concurrency.
 
 ### What You Get
 
@@ -42,7 +42,7 @@ Graphos implements **Snapshot Isolation (SI)**, a widely-used isolation level th
 
 ## Write-Write Conflict Detection
 
-Graphos automatically detects when two transactions try to modify the same entity:
+Grafeo automatically detects when two transactions try to modify the same entity:
 
 ```python
 # Thread 1
@@ -215,7 +215,7 @@ session.rollback()?;
 
 ## Garbage Collection
 
-Graphos automatically garbage collects old transaction metadata and version chains:
+Grafeo automatically garbage collects old transaction metadata and version chains:
 
 - Aborted transactions are cleaned up immediately
 - Committed transaction metadata is retained until no active transaction can see it

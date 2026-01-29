@@ -78,7 +78,7 @@ session.execute(r#"
 ## Parameterized Queries
 
 ```rust
-use graphos::params;
+use grafeo::params;
 
 let session = db.session()?;
 

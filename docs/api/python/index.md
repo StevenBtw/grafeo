@@ -5,20 +5,20 @@ description: Python API reference.
 
 # Python API Reference
 
-Complete reference for the `pygraphos` Python package.
+Complete reference for the `grafeo` Python package.
 
 ## Installation
 
 ```bash
-uv add pygraphos
+uv add grafeo
 ```
 
 ## Quick Start
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.Database()
+db = grafeo.Database()
 with db.session() as session:
     session.execute("INSERT (:Person {name: 'Alice'})")
 ```

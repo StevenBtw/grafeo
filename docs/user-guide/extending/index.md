@@ -1,11 +1,11 @@
 ---
-title: Extending Graphos
-description: How to extend and customize Graphos.
+title: Extending Grafeo
+description: How to extend and customize Grafeo.
 ---
 
-# Extending Graphos
+# Extending Grafeo
 
-Graphos is designed to be extensible. Learn how to add custom functionality.
+Grafeo is designed to be extensible. Learn how to add custom functionality.
 
 ## Extension Points
 
@@ -39,7 +39,7 @@ Graphos is designed to be extensible. Learn how to add custom functionality.
 
     ---
 
-    Extend Graphos with Rust code.
+    Extend Grafeo with Rust code.
 
     [:octicons-arrow-right-24: Rust Extensions](rust-extensions.md)
 

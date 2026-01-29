@@ -1,11 +1,11 @@
 ---
 title: SPARQL Query Language
-description: Learn the SPARQL query language for RDF data in Graphos.
+description: Learn the SPARQL query language for RDF data in Grafeo.
 ---
 
 # SPARQL Query Language
 
-SPARQL (SPARQL Protocol and RDF Query Language) is the W3C standard query language for RDF (Resource Description Framework) data. Graphos implements SPARQL 1.1 for querying RDF graphs.
+SPARQL (SPARQL Protocol and RDF Query Language) is the W3C standard query language for RDF (Resource Description Framework) data. Grafeo implements SPARQL 1.1 for querying RDF graphs.
 
 ## Overview
 
@@ -46,14 +46,14 @@ SPARQL support requires the `sparql` feature flag:
 
     ```toml
     [dependencies]
-    graphos-engine = { version = "0.1", features = ["sparql"] }
+    grafeo-engine = { version = "0.1", features = ["sparql"] }
     ```
 
 === "Python"
 
     ```python
     # SPARQL is enabled by default in the Python package
-    import graphos
+    import grafeo
     ```
 
 ## Learn More

@@ -1,11 +1,11 @@
 ---
 title: Storage Model
-description: How Graphos stores graph data.
+description: How Grafeo stores graph data.
 ---
 
 # Storage Model
 
-Graphos uses a hybrid storage model optimized for graph workloads.
+Grafeo uses a hybrid storage model optimized for graph workloads.
 
 ## Overview
 

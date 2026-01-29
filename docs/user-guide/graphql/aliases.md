@@ -135,7 +135,7 @@ Inline fragments can also be used without a type condition for grouping with dir
 
 ## Directives
 
-Graphos supports standard GraphQL directives:
+Grafeo supports standard GraphQL directives:
 
 ### @include
 
@@ -166,9 +166,9 @@ query GetPerson($hideEmail: Boolean!) {
 ## Python Example
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.GraphosDB()
+db = grafeo.GrafeoDB()
 
 # Create data
 db.execute("INSERT (:Person {name: 'Alice', age: 30, city: 'Seattle'})")

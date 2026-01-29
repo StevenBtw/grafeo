@@ -1,11 +1,11 @@
 ---
 title: Changelog
-description: Version history and release notes for Graphos.
+description: Version history and release notes for Grafeo.
 ---
 
 # Changelog
 
-All notable changes to Graphos will be documented here.
+All notable changes to Grafeo will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - Coming Soon
 
-Initial release of Graphos.
+Initial release of Grafeo.
 
 ### Features
 
@@ -43,5 +43,5 @@ Initial release of Graphos.
 - In-memory and persistent storage
 - ACID transactions with snapshot isolation
 
-[Unreleased]: https://github.com/StevenBtw/graphos/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/StevenBtw/graphos/releases/tag/v0.1.0
+[Unreleased]: https://github.com/StevenBtw/grafeo/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/StevenBtw/grafeo/releases/tag/v0.1.0

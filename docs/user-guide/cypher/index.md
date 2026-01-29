@@ -1,11 +1,11 @@
 ---
 title: Cypher Query Language
-description: Learn the Cypher query language for Graphos.
+description: Learn the Cypher query language for Grafeo.
 ---
 
 # Cypher Query Language
 
-Cypher is a declarative graph query language originally developed by Neo4j. Graphos fully supports Cypher alongside GQL.
+Cypher is a declarative graph query language originally developed by Neo4j. Grafeo fully supports Cypher alongside GQL.
 
 ## Overview
 

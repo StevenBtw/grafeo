@@ -1,11 +1,11 @@
 ---
 title: Installation
-description: Install Graphos for Python or Rust.
+description: Install Grafeo for Python or Rust.
 ---
 
 # Installation
 
-Graphos can be used from both Python and Rust. Choose the installation method for your preferred language.
+Grafeo can be used from both Python and Rust. Choose the installation method for your preferred language.
 
 ## Python
 
@@ -14,26 +14,26 @@ Graphos can be used from both Python and Rust. Choose the installation method fo
 [uv](https://github.com/astral-sh/uv) is a fast Python package installer:
 
 ```bash
-uv add pygraphos
+uv add grafeo
 ```
 
 ### Using pip (alternative)
 
 ```bash
-pip install pygraphos  # If uv is not available
+pip install grafeo  # If uv is not available
 ```
 
 ### Verify Installation
 
 ```python
-import graphos
+import grafeo
 
 # Print version
-print(graphos.__version__)
+print(grafeo.__version__)
 
 # Create a test database
-db = graphos.Database()
-print("Graphos installed successfully!")
+db = grafeo.Database()
+print("Grafeo installed successfully!")
 ```
 
 ### Platform Support
@@ -50,26 +50,26 @@ print("Graphos installed successfully!")
 
 ### Using Cargo
 
-Add Graphos to your project:
+Add Grafeo to your project:
 
 ```bash
-cargo add graphos
+cargo add grafeo
 ```
 
 Or add it manually to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphos = "0.1"
+grafeo = "0.1"
 ```
 
 ### Feature Flags
 
-Graphos supports optional features:
+Grafeo supports optional features:
 
 ```toml
 [dependencies]
-graphos = { version = "0.1", features = ["full"] }
+grafeo = { version = "0.1", features = ["full"] }
 ```
 
 | Feature | Description |
@@ -80,11 +80,11 @@ graphos = { version = "0.1", features = ["full"] }
 ### Verify Installation
 
 ```rust
-use graphos::Database;
+use grafeo::Database;
 
-fn main() -> Result<(), graphos::Error> {
+fn main() -> Result<(), grafeo::Error> {
     let db = Database::open_in_memory()?;
-    println!("Graphos installed successfully!");
+    println!("Grafeo installed successfully!");
     Ok(())
 }
 ```
@@ -94,8 +94,8 @@ fn main() -> Result<(), graphos::Error> {
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/StevenBtw/graphos.git
-cd graphos
+git clone https://github.com/StevenBtw/grafeo.git
+cd grafeo
 ```
 
 ### Build Rust Crates
@@ -107,11 +107,11 @@ cargo build --workspace --release
 ### Build Python Package
 
 ```bash
-cd crates/graphos-python
+cd crates/grafeo-python
 uv add maturin
 maturin develop --release
 ```
 
 ## Next Steps
 
-Now that you have Graphos installed, continue to the [Quick Start](quickstart.md) guide.
+Now that you have Grafeo installed, continue to the [Quick Start](quickstart.md) guide.

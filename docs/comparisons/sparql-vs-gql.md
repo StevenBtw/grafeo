@@ -204,22 +204,22 @@ This guide compares SPARQL (W3C standard for RDF) with GQL (ISO standard for pro
 - Relationships have **properties** (weights, timestamps)
 - Prefer **ASCII-art style** query patterns
 
-## Graphos Support
+## Grafeo Support
 
-Graphos supports both query languages:
+Grafeo supports both query languages:
 
 ```rust
 // Enable both features
 [dependencies]
-graphos-engine = { version = "0.1", features = ["gql", "sparql"] }
+grafeo-engine = { version = "0.1", features = ["gql", "sparql"] }
 ```
 
 === "SPARQL Query"
 
     ```python
-    import graphos
+    import grafeo
 
-    db = graphos.Database()
+    db = grafeo.Database()
 
     # SPARQL query
     result = db.sparql("""
@@ -232,9 +232,9 @@ graphos-engine = { version = "0.1", features = ["gql", "sparql"] }
 === "GQL Query"
 
     ```python
-    import graphos
+    import grafeo
 
-    db = graphos.Database()
+    db = grafeo.Database()
 
     # GQL query
     result = db.query("""

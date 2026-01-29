@@ -1,15 +1,15 @@
 ---
 title: Architecture
-description: Graphos system architecture and internals.
+description: Grafeo system architecture and internals.
 ---
 
 # Architecture
 
-Understand how Graphos is designed and implemented.
+Understand how Grafeo is designed and implemented.
 
 ## Overview
 
-Graphos is built as a modular system with clear separation of concerns:
+Grafeo is built as a modular system with clear separation of concerns:
 
 ```mermaid
 graph TB
@@ -18,26 +18,26 @@ graph TB
         RS[Rust API]
     end
 
-    subgraph "graphos-engine"
+    subgraph "grafeo-engine"
         DB[Database]
         SESS[Session Manager]
         QP[Query Processor]
         TXN[Transaction Manager]
     end
 
-    subgraph "graphos-adapters"
+    subgraph "grafeo-adapters"
         GQL[GQL Parser]
         WAL[WAL Storage]
         PLUG[Plugins]
     end
 
-    subgraph "graphos-core"
+    subgraph "grafeo-core"
         LPG[LPG Store]
         IDX[Indexes]
         EXEC[Execution Engine]
     end
 
-    subgraph "graphos-common"
+    subgraph "grafeo-common"
         TYPES[Types]
         MEM[Memory]
         UTIL[Utilities]

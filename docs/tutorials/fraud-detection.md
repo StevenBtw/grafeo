@@ -28,9 +28,9 @@ Use graph patterns to detect potentially fraudulent activity.
 ## Setup
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.Database()
+db = grafeo.Database()
 ```
 
 ## Create Transaction Data
@@ -166,4 +166,4 @@ for account_id in ['A1', 'A4', 'A5', 'A6']:
 ## Next Steps
 
 - [Path Queries](../user-guide/gql/paths.md) - Advanced graph traversals
-- [Architecture](../architecture/index.md) - How Graphos handles large graphs
+- [Architecture](../architecture/index.md) - How Grafeo handles large graphs

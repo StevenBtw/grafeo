@@ -1,11 +1,11 @@
 ---
 title: Your First Graph
-description: Build your first graph application with Graphos.
+description: Build your first graph application with Grafeo.
 ---
 
 # Your First Graph
 
-In this tutorial, you'll build a simple social network graph to learn the fundamentals of Graphos.
+In this tutorial, you'll build a simple social network graph to learn the fundamentals of Grafeo.
 
 ## What We'll Build
 
@@ -21,16 +21,16 @@ A social network with:
 === "Python"
 
     ```python
-    import graphos
+    import grafeo
 
     # Create a persistent database
-    db = graphos.Database(path="social_network.db")
+    db = grafeo.Database(path="social_network.db")
     ```
 
 === "Rust"
 
     ```rust
-    use graphos::Database;
+    use grafeo::Database;
 
     let db = Database::open("social_network.db")?;
     ```
@@ -164,7 +164,7 @@ A social network with:
             })
             INSERT (:Post {
                 id: 2,
-                content: 'Learning Graphos is fun!',
+                content: 'Learning Grafeo is fun!',
                 created_at: '2024-01-16'
             })
             INSERT (:Post {

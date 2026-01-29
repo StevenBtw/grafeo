@@ -1,11 +1,11 @@
 ---
 title: Tutorials
-description: Real-world tutorials and examples for Graphos.
+description: Real-world tutorials and examples for Grafeo.
 ---
 
 # Tutorials
 
-Learn Graphos through practical, real-world examples.
+Learn Grafeo through practical, real-world examples.
 
 ## Available Tutorials
 

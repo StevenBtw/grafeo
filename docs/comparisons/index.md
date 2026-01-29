@@ -5,7 +5,7 @@ description: Compare query languages and data models.
 
 # Language Comparisons
 
-Graphos supports multiple query paradigms. This section compares the languages and data models.
+Grafeo supports multiple query paradigms. This section compares the languages and data models.
 
 ## Query Languages
 

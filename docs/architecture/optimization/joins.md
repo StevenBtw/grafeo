@@ -8,7 +8,7 @@ tags:
 
 # Join Ordering
 
-Graphos uses DPccp (Dynamic Programming connected complement pairs) for join ordering.
+Grafeo uses DPccp (Dynamic Programming connected complement pairs) for join ordering.
 
 ## The Problem
 

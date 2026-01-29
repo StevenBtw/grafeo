@@ -1,6 +1,6 @@
 ---
 title: Edges and Types
-description: Working with edges and relationship types in Graphos.
+description: Working with edges and relationship types in Grafeo.
 tags:
   - data-model
   - edges

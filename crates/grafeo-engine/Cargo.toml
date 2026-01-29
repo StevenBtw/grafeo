@@ -1,0 +1,58 @@
+[package]
+name = "grafeo-engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Query engine and database management for Grafeo"
+
+[dependencies]
+grafeo-common.workspace = true
+grafeo-core.workspace = true
+grafeo-adapters.workspace = true
+
+# Error handling
+thiserror.workspace = true
+anyhow.workspace = true
+
+# Data structures
+smallvec.workspace = true
+hashbrown.workspace = true
+indexmap.workspace = true
+
+# Concurrency
+parking_lot.workspace = true
+crossbeam.workspace = true
+rayon.workspace = true
+
+# Async
+tokio.workspace = true
+
+# Serialization
+serde.workspace = true
+
+# Tracing
+tracing.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+tempfile.workspace = true
+
+[features]
+default = ["gql"]
+gql = ["grafeo-adapters/gql"]
+cypher = ["grafeo-adapters/cypher"]
+sparql = ["grafeo-adapters/sparql"]
+gremlin = ["grafeo-adapters/gremlin"]
+graphql = ["grafeo-adapters/graphql"]
+rdf = ["grafeo-core/rdf", "grafeo-adapters/rdf"]  # RDF graph model and planner
+full = ["gql", "cypher", "sparql", "gremlin", "graphql", "rdf"]
+
+[lints]
+workspace = true
+
+[[bench]]
+name = "query_bench"
+harness = false

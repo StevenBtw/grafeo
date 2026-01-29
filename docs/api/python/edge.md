@@ -1,12 +1,12 @@
 ---
-title: graphos.Edge
+title: grafeo.Edge
 description: Edge class reference.
 tags:
   - api
   - python
 ---
 
-# graphos.Edge
+# grafeo.Edge
 
 Represents a graph edge.
 

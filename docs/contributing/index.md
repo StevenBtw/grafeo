@@ -1,11 +1,11 @@
 ---
 title: Contributing
-description: How to contribute to Graphos.
+description: How to contribute to Grafeo.
 ---
 
 # Contributing
 
-Thank you for your interest in contributing to Graphos!
+Thank you for your interest in contributing to Grafeo!
 
 ## Getting Started
 

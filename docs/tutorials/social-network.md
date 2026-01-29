@@ -1,6 +1,6 @@
 ---
 title: Social Network Graph
-description: Build a social network graph with Graphos.
+description: Build a social network graph with Grafeo.
 tags:
   - tutorial
   - beginner
@@ -19,15 +19,15 @@ In this tutorial, you'll build a social network with users, friendships, posts, 
 
 ## Prerequisites
 
-- Graphos installed ([Installation Guide](../getting-started/installation.md))
+- Grafeo installed ([Installation Guide](../getting-started/installation.md))
 - Basic understanding of graphs
 
 ## Setup
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.Database()
+db = grafeo.Database()
 ```
 
 ## Step 1: Create Users
@@ -100,7 +100,7 @@ with db.session() as session:
         })
         INSERT (:Post {
             id: 2,
-            content: 'Just discovered Graphos - amazing graph database!',
+            content: 'Just discovered Grafeo - amazing graph database!',
             created: '2023-04-01'
         })
         INSERT (:Post {

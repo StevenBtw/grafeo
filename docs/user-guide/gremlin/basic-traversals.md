@@ -8,7 +8,7 @@ tags:
 
 # Basic Traversals
 
-This guide covers the fundamentals of traversing graphs with Gremlin in Graphos.
+This guide covers the fundamentals of traversing graphs with Gremlin in Grafeo.
 
 ## Starting a Traversal
 
@@ -134,9 +134,9 @@ g.V().range(5, 15)
 ## Python Example
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.GraphosDB()
+db = grafeo.GrafeoDB()
 
 # Create data
 db.execute("INSERT (:Person {name: 'Alice', age: 30})")

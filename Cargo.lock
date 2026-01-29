@@ -450,17 +450,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "graphos"
+name = "grafeo"
 version = "0.1.1"
 dependencies = [
- "graphos-adapters",
- "graphos-common",
- "graphos-core",
- "graphos-engine",
+ "grafeo-adapters",
+ "grafeo-common",
+ "grafeo-core",
+ "grafeo-engine",
 ]
 
 [[package]]
-name = "graphos-adapters"
+name = "grafeo-adapters"
 version = "0.1.1"
 dependencies = [
  "bincode",
@@ -468,8 +468,8 @@ dependencies = [
  "bytes",
  "crc32fast",
  "crossbeam",
- "graphos-common",
- "graphos-core",
+ "grafeo-common",
+ "grafeo-core",
  "hashbrown",
  "memmap2",
  "parking_lot",
@@ -483,7 +483,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "graphos-common"
+name = "grafeo-common"
 version = "0.1.1"
 dependencies = [
  "ahash",
@@ -502,7 +502,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "graphos-core"
+name = "grafeo-core"
 version = "0.1.1"
 dependencies = [
  "ahash",
@@ -510,7 +510,7 @@ dependencies = [
  "bytes",
  "criterion",
  "crossbeam",
- "graphos-common",
+ "grafeo-common",
  "hashbrown",
  "indexmap",
  "parking_lot",
@@ -524,15 +524,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "graphos-engine"
+name = "grafeo-engine"
 version = "0.1.1"
 dependencies = [
  "anyhow",
  "criterion",
  "crossbeam",
- "graphos-adapters",
- "graphos-common",
- "graphos-core",
+ "grafeo-adapters",
+ "grafeo-common",
+ "grafeo-core",
  "hashbrown",
  "indexmap",
  "parking_lot",
@@ -546,13 +546,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "graphos-python"
+name = "grafeo-python"
 version = "0.1.1"
 dependencies = [
- "graphos-adapters",
- "graphos-common",
- "graphos-core",
- "graphos-engine",
+ "grafeo-adapters",
+ "grafeo-common",
+ "grafeo-core",
+ "grafeo-engine",
  "parking_lot",
  "pyo3",
  "pyo3-async-runtimes",

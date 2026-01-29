@@ -1,12 +1,12 @@
 ---
-title: graphos.Node
+title: grafeo.Node
 description: Node class reference.
 tags:
   - api
   - python
 ---
 
-# graphos.Node
+# grafeo.Node
 
 Represents a graph node.
 

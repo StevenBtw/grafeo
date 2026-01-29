@@ -1,0 +1,59 @@
+[package]
+name = "grafeo-adapters"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Storage, query language, and plugin adapters for Grafeo"
+
+[dependencies]
+grafeo-common.workspace = true
+grafeo-core.workspace = true
+
+# Error handling
+thiserror.workspace = true
+
+# Data structures
+smallvec.workspace = true
+hashbrown.workspace = true
+
+# Memory & I/O
+memmap2.workspace = true
+bytes.workspace = true
+byteorder.workspace = true
+
+# Checksums
+crc32fast.workspace = true
+
+# Serialization
+serde.workspace = true
+bincode.workspace = true
+
+# Concurrency
+parking_lot.workspace = true
+crossbeam.workspace = true
+
+# Async
+tokio.workspace = true
+
+# Tracing
+tracing.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+tempfile.workspace = true
+
+[features]
+default = ["gql"]
+gql = []                      # GQL parser (ISO/IEC 39075:2024)
+cypher = []                   # Cypher parser (openCypher 9.0)
+sparql = []                   # SPARQL parser (W3C SPARQL 1.1)
+gremlin = []                  # Gremlin parser (Apache TinkerPop)
+graphql = []                  # GraphQL parser (spec-compliant)
+rdf = ["grafeo-core/rdf"]    # RDF graph model support
+full = ["gql", "cypher", "sparql", "gremlin", "graphql", "rdf"]
+
+[lints]
+workspace = true

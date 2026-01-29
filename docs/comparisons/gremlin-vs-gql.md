@@ -123,12 +123,12 @@ This guide compares Gremlin (Apache TinkerPop) with GQL (ISO/IEC 39075) to help 
 
 ## Mixing Languages
 
-Graphos allows you to use both languages in the same database:
+Grafeo allows you to use both languages in the same database:
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.GraphosDB()
+db = grafeo.GrafeoDB()
 
 # Create data with GQL
 db.execute("INSERT (:Person {name: 'Alice'})")

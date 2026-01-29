@@ -8,24 +8,24 @@ tags:
 
 # Database Operations
 
-Learn how to create and configure Graphos databases in Python.
+Learn how to create and configure Grafeo databases in Python.
 
 ## Creating a Database
 
 ```python
-import graphos
+import grafeo
 
 # In-memory database
-db = graphos.Database()
+db = grafeo.Database()
 
 # Persistent database
-db = graphos.Database(path="my_graph.db")
+db = grafeo.Database(path="my_graph.db")
 ```
 
 ## Configuration Options
 
 ```python
-db = graphos.Database(
+db = grafeo.Database(
     path="my_graph.db",
     memory_limit=4 * 1024 * 1024 * 1024,  # 4 GB
     threads=8,
@@ -37,7 +37,7 @@ db = graphos.Database(
 
 ```python
 # Create database
-db = graphos.Database(path="my_graph.db")
+db = grafeo.Database(path="my_graph.db")
 
 # Use the database
 with db.session() as session:
@@ -51,7 +51,7 @@ db.close()
 
 ```python
 # Database as context manager
-with graphos.Database(path="my_graph.db") as db:
+with grafeo.Database(path="my_graph.db") as db:
     with db.session() as session:
         session.execute("INSERT (:Person {name: 'Alice'})")
 # Database is automatically closed
@@ -60,7 +60,7 @@ with graphos.Database(path="my_graph.db") as db:
 ## Multiple Sessions
 
 ```python
-db = graphos.Database()
+db = grafeo.Database()
 
 # Create multiple sessions for concurrent access
 session1 = db.session()

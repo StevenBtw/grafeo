@@ -7,9 +7,9 @@ Run with: pytest tests/python/test_graph_models.py -v
 import pytest
 
 
-# Try to import graphos
+# Try to import grafeo
 try:
-    from graphos import GraphosDB
+    from grafeo import GrafeoDB
     GRAPHOS_AVAILABLE = True
 except ImportError:
     GRAPHOS_AVAILABLE = False
@@ -17,7 +17,7 @@ except ImportError:
 
 pytestmark = pytest.mark.skipif(
     not GRAPHOS_AVAILABLE,
-    reason="Graphos Python bindings not installed"
+    reason="Grafeo Python bindings not installed"
 )
 
 
@@ -27,7 +27,7 @@ class TestLPGModel:
     def setup_method(self):
         """Create a fresh LPG database."""
         # Default model is LPG
-        self.db = GraphosDB()
+        self.db = GrafeoDB()
 
     # ===== Node Operations =====
 
@@ -218,7 +218,7 @@ class TestRDFModel:
         try:
             # RDF mode might be configured differently
             # This is a placeholder - actual API may vary
-            self.db = GraphosDB()  # May need: GraphosDB(model="rdf")
+            self.db = GrafeoDB()  # May need: GrafeoDB(model="rdf")
             self.rdf_available = True
         except Exception:
             self.rdf_available = False
@@ -365,7 +365,7 @@ class TestModelInteroperability:
 
     def setup_method(self):
         """Create a database."""
-        self.db = GraphosDB()
+        self.db = GrafeoDB()
 
     def test_lpg_to_rdf_mapping(self):
         """Test that LPG data can be queried with RDF-like patterns."""
@@ -410,7 +410,7 @@ class TestGraphModelPerformance:
 
     def test_lpg_bulk_insert_performance(self):
         """LPG: Measure bulk insert performance."""
-        db = GraphosDB()
+        db = GrafeoDB()
 
         import time
         start = time.perf_counter()
@@ -433,7 +433,7 @@ class TestGraphModelPerformance:
 
     def test_lpg_query_performance(self):
         """LPG: Measure query performance."""
-        db = GraphosDB()
+        db = GrafeoDB()
 
         # Setup
         node_ids = []

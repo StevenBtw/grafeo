@@ -1,13 +1,13 @@
 ---
 title: User Guide
-description: Comprehensive guide to using Graphos.
+description: Comprehensive guide to using Grafeo.
 ---
 
 # User Guide
 
-Welcome to the Graphos User Guide. This section covers everything you need to know to use Graphos effectively.
+Welcome to the Grafeo User Guide. This section covers everything you need to know to use Grafeo effectively.
 
-Graphos supports both **Labeled Property Graph (LPG)** and **RDF** data models, with multiple query languages for each.
+Grafeo supports both **Labeled Property Graph (LPG)** and **RDF** data models, with multiple query languages for each.
 
 ## Sections
 
@@ -65,7 +65,7 @@ Graphos supports both **Labeled Property Graph (LPG)** and **RDF** data models, 
 
     ---
 
-    Use Graphos from Python with the `pygraphos` package.
+    Use Grafeo from Python with the `grafeo` package.
 
     [:octicons-arrow-right-24: Python Guide](python/index.md)
 
@@ -73,7 +73,7 @@ Graphos supports both **Labeled Property Graph (LPG)** and **RDF** data models, 
 
     ---
 
-    Use Graphos directly from Rust applications.
+    Use Grafeo directly from Rust applications.
 
     [:octicons-arrow-right-24: Rust Guide](rust/index.md)
 

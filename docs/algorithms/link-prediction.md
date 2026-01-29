@@ -18,7 +18,7 @@ Algorithms for predicting missing or future edges.
 Predict links based on shared connections.
 
 ```python
-from graphos.algorithms import common_neighbors
+from grafeo.algorithms import common_neighbors
 
 predictions = common_neighbors(db,
     node_a=1,
@@ -33,7 +33,7 @@ print(f"Common neighbor score: {predictions.score}")
 Normalized common neighbors.
 
 ```python
-from graphos.algorithms import jaccard_coefficient
+from grafeo.algorithms import jaccard_coefficient
 
 score = jaccard_coefficient(db, node_a, node_b)
 ```
@@ -43,7 +43,7 @@ score = jaccard_coefficient(db, node_a, node_b)
 Weighted common neighbors (rare neighbors count more).
 
 ```python
-from graphos.algorithms import adamic_adar
+from grafeo.algorithms import adamic_adar
 
 score = adamic_adar(db, node_a, node_b)
 ```
@@ -53,7 +53,7 @@ score = adamic_adar(db, node_a, node_b)
 Product of node degrees.
 
 ```python
-from graphos.algorithms import preferential_attachment
+from grafeo.algorithms import preferential_attachment
 
 score = preferential_attachment(db, node_a, node_b)
 ```
@@ -63,7 +63,7 @@ score = preferential_attachment(db, node_a, node_b)
 Similar to Adamic-Adar but with different weighting.
 
 ```python
-from graphos.algorithms import resource_allocation
+from grafeo.algorithms import resource_allocation
 
 score = resource_allocation(db, node_a, node_b)
 ```
@@ -73,7 +73,7 @@ score = resource_allocation(db, node_a, node_b)
 Generate predictions for many node pairs.
 
 ```python
-from graphos.algorithms import predict_links
+from grafeo.algorithms import predict_links
 
 predictions = predict_links(db,
     method='adamic_adar',

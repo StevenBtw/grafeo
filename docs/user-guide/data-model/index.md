@@ -1,11 +1,11 @@
 ---
 title: Data Model
-description: Understanding the Labeled Property Graph model in Graphos.
+description: Understanding the Labeled Property Graph model in Grafeo.
 ---
 
 # Data Model
 
-Graphos implements the **Labeled Property Graph (LPG)** model, the most widely used data model for graph databases.
+Grafeo implements the **Labeled Property Graph (LPG)** model, the most widely used data model for graph databases.
 
 ## Overview
 

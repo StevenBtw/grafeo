@@ -1,7 +1,7 @@
 """
-Performance benchmarks for Graphos.
+Performance benchmarks for Grafeo.
 
-Run with: python tests/python/benchmark_graphos.py
+Run with: python tests/python/benchmark_grafeo.py
 
 This script benchmarks:
 1. Node/edge insertion throughput
@@ -27,14 +27,14 @@ from synthetic_data import (
     load_data_into_db,
 )
 
-# Try to import graphos
+# Try to import grafeo
 try:
-    from graphos import GraphosDB
+    from grafeo import GrafeoDB
     GRAPHOS_AVAILABLE = True
 except ImportError:
     GRAPHOS_AVAILABLE = False
-    print("ERROR: Graphos Python bindings not installed.")
-    print("Run: cd crates/graphos-python && maturin develop")
+    print("ERROR: Grafeo Python bindings not installed.")
+    print("Run: cd crates/grafeo-python && maturin develop")
     sys.exit(1)
 
 
@@ -156,7 +156,7 @@ def run_insertion_benchmarks(suite: BenchmarkSuite):
 
     # Benchmark: Single node insertion
     def setup_single_node():
-        return GraphosDB()
+        return GrafeoDB()
 
     def single_node_insert(db):
         for i in range(1000):
@@ -189,7 +189,7 @@ def run_insertion_benchmarks(suite: BenchmarkSuite):
 
     # Benchmark: Edge insertion
     def setup_edge_insert():
-        db = GraphosDB()
+        db = GrafeoDB()
         node_ids = []
         for i in range(100):
             node = db.create_node(["Node"], {"idx": i})
@@ -216,7 +216,7 @@ def run_query_benchmarks(suite: BenchmarkSuite):
 
     # Setup: Create a social network
     def setup_social_network():
-        db = GraphosDB()
+        db = GrafeoDB()
         gen = SocialNetworkGenerator(num_nodes=1000, avg_edges_per_node=10, seed=42)
         load_data_into_db(db, gen)
         return db
@@ -309,7 +309,7 @@ def run_pattern_benchmarks(suite: BenchmarkSuite):
 
     # Setup: Create a clique graph for triangle counting
     def setup_clique():
-        db = GraphosDB()
+        db = GrafeoDB()
         gen = CliqueGenerator(num_cliques=10, clique_size=10, inter_clique_edges=5, seed=42)
         load_data_into_db(db, gen)
         return db
@@ -331,7 +331,7 @@ def run_pattern_benchmarks(suite: BenchmarkSuite):
 
     # Setup: Create a tree for hierarchical queries
     def setup_tree():
-        db = GraphosDB()
+        db = GrafeoDB()
         gen = TreeGenerator(depth=5, branching_factor=3, seed=42)
         load_data_into_db(db, gen)
         return db
@@ -376,7 +376,7 @@ def run_scalability_benchmarks(suite: BenchmarkSuite):
 
     for scale in scales:
         def setup_scale(s=scale):
-            db = GraphosDB()
+            db = GrafeoDB()
             gen = SocialNetworkGenerator(num_nodes=s, avg_edges_per_node=5, seed=42)
             load_data_into_db(db, gen)
             return db
@@ -395,7 +395,7 @@ def run_scalability_benchmarks(suite: BenchmarkSuite):
     # Edge scaling
     for scale in scales:
         def setup_edge_scale(s=scale):
-            db = GraphosDB()
+            db = GrafeoDB()
             gen = SocialNetworkGenerator(num_nodes=s, avg_edges_per_node=10, seed=42)
             load_data_into_db(db, gen)
             return db
@@ -419,7 +419,7 @@ def run_ldbc_benchmarks(suite: BenchmarkSuite):
     print("\n--- LDBC-like Query Benchmarks ---")
 
     def setup_ldbc():
-        db = GraphosDB()
+        db = GrafeoDB()
         gen = LDBCLikeGenerator(scale_factor=0.5, seed=42)
         load_data_into_db(db, gen)
         return db
@@ -497,7 +497,7 @@ def run_memory_benchmarks(suite: BenchmarkSuite):
 
     # Large property values
     def setup_large_props():
-        return GraphosDB()
+        return GrafeoDB()
 
     def insert_large_props(db):
         for i in range(100):
@@ -532,7 +532,7 @@ def run_gql_vs_cypher_benchmarks(suite: BenchmarkSuite):
     print("\n--- GQL vs Cypher Benchmarks ---")
 
     def setup_gql_cypher():
-        db = GraphosDB()
+        db = GrafeoDB()
         gen = SocialNetworkGenerator(num_nodes=500, avg_edges_per_node=5, seed=42)
         load_data_into_db(db, gen)
         return db
@@ -589,7 +589,7 @@ def run_lpg_model_benchmarks(suite: BenchmarkSuite):
 
     # Multi-label node operations
     def setup_lpg():
-        return GraphosDB()
+        return GrafeoDB()
 
     def create_multi_label_nodes(db):
         for i in range(500):
@@ -611,7 +611,7 @@ def run_lpg_model_benchmarks(suite: BenchmarkSuite):
 
     # Query by multiple labels
     def setup_multi_label():
-        db = GraphosDB()
+        db = GrafeoDB()
         for i in range(500):
             labels = ["Person"]
             if i % 2 == 0:
@@ -658,7 +658,7 @@ def run_rdf_model_benchmarks(suite: BenchmarkSuite):
     print("\n--- RDF Model Benchmarks ---")
 
     def setup_rdf():
-        return GraphosDB()
+        return GrafeoDB()
 
     # Create RDF-like triples
     def create_rdf_triples(db):
@@ -690,7 +690,7 @@ def run_rdf_model_benchmarks(suite: BenchmarkSuite):
 
     # Query RDF-like data
     def setup_rdf_data():
-        db = GraphosDB()
+        db = GrafeoDB()
         resources = []
         for i in range(100):
             r = db.create_node(["Resource"], {

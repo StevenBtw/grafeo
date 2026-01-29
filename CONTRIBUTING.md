@@ -1,6 +1,6 @@
-# Contributing to Graphos
+# Contributing to Grafeo
 
-Thank you for your interest in contributing to Graphos! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Grafeo! This document provides guidelines and information for contributors.
 
 ## Getting Started
 
@@ -13,8 +13,8 @@ Thank you for your interest in contributing to Graphos! This document provides g
 ### Setup
 
 ```bash
-git clone https://github.com/StevenBtw/graphos.git
-cd graphos
+git clone https://github.com/StevenBtw/grafeo.git
+cd grafeo
 cargo build --workspace
 ```
 
@@ -26,16 +26,16 @@ For detailed architecture documentation, see [.claude/ARCHITECTURE.md](.claude/A
 
 | Crate              | Purpose                                        |
 | ------------------ | ---------------------------------------------- |
-| `graphos`          | Top-level facade, re-exports public API        |
-| `graphos-common`   | Foundation types, memory allocators, utilities |
-| `graphos-core`     | LPG storage, indexes, execution engine         |
-| `graphos-adapters` | GQL parser, storage backends, plugins          |
-| `graphos-engine`   | Database facade, sessions, transactions        |
-| `graphos-python`   | Python bindings via PyO3                       |
+| `grafeo`          | Top-level facade, re-exports public API        |
+| `grafeo-common`   | Foundation types, memory allocators, utilities |
+| `grafeo-core`     | LPG storage, indexes, execution engine         |
+| `grafeo-adapters` | GQL parser, storage backends, plugins          |
+| `grafeo-engine`   | Database facade, sessions, transactions        |
+| `grafeo-python`   | Python bindings via PyO3                       |
 
 ### Query Language Architecture
 
-Graphos supports multiple query languages through a translator pattern:
+Grafeo supports multiple query languages through a translator pattern:
 
 ```
 Query String → Parser → AST → Translator → LogicalPlan → Optimizer → Executor
@@ -43,15 +43,15 @@ Query String → Parser → AST → Translator → LogicalPlan → Optimizer →
 
 | Component | LPG Path | RDF Path |
 |-----------|----------|----------|
-| **Parser** | `graphos-adapters/query/gql/` | `graphos-adapters/query/sparql/` |
-| | `graphos-adapters/query/cypher/` | |
-| | `graphos-adapters/query/gremlin/` | |
-| | `graphos-adapters/query/graphql/` | `graphos-adapters/query/graphql/` |
-| **Translator** | `graphos-engine/query/gql_translator.rs` | `graphos-engine/query/sparql_translator.rs` |
-| | `graphos-engine/query/cypher_translator.rs` | `graphos-engine/query/graphql_rdf_translator.rs` |
-| | `graphos-engine/query/gremlin_translator.rs` | |
-| | `graphos-engine/query/graphql_translator.rs` | |
-| **Storage** | `graphos-core/graph/lpg/` | `graphos-core/graph/rdf/` |
+| **Parser** | `grafeo-adapters/query/gql/` | `grafeo-adapters/query/sparql/` |
+| | `grafeo-adapters/query/cypher/` | |
+| | `grafeo-adapters/query/gremlin/` | |
+| | `grafeo-adapters/query/graphql/` | `grafeo-adapters/query/graphql/` |
+| **Translator** | `grafeo-engine/query/gql_translator.rs` | `grafeo-engine/query/sparql_translator.rs` |
+| | `grafeo-engine/query/cypher_translator.rs` | `grafeo-engine/query/graphql_rdf_translator.rs` |
+| | `grafeo-engine/query/gremlin_translator.rs` | |
+| | `grafeo-engine/query/graphql_translator.rs` | |
+| **Storage** | `grafeo-core/graph/lpg/` | `grafeo-core/graph/rdf/` |
 | **Operators** | NodeScan, Expand, CreateNode | TripleScan, LeftJoin, AntiJoin |
 
 ### Data Model Compatibility
@@ -76,7 +76,7 @@ See [.claude/IMPLEMENTATION_PLAN.md](.claude/IMPLEMENTATION_PLAN.md) for the det
 - Use `#[must_use]` for pure functions that return values
 - Use `#[inline]` for small, frequently-called functions
 - Prefer `parking_lot` locks over `std::sync` (faster, no poisoning)
-- Use `FxHashMap`/`FxHashSet` from `graphos_common::utils::hash` for internal hash tables
+- Use `FxHashMap`/`FxHashSet` from `grafeo_common::utils::hash` for internal hash tables
 
 ### Documentation
 
@@ -85,7 +85,7 @@ See [.claude/IMPLEMENTATION_PLAN.md](.claude/IMPLEMENTATION_PLAN.md) for the det
 
 ### Error Handling
 
-- Use `graphos_common::utils::error::Result` for fallible operations
+- Use `grafeo_common::utils::error::Result` for fallible operations
 - Provide meaningful error messages with context
 - Use `thiserror` for error types
 
@@ -102,7 +102,7 @@ See [.claude/IMPLEMENTATION_PLAN.md](.claude/IMPLEMENTATION_PLAN.md) for the det
 cargo test --workspace
 
 # Run tests for a specific crate
-cargo test -p graphos-core
+cargo test -p grafeo-core
 
 # Run with output visible
 cargo test -- --nocapture
@@ -121,13 +121,13 @@ cargo tarpaulin --workspace --out Html
 cargo bench --workspace
 
 # Run specific benchmark
-cargo bench -p graphos-common arena
+cargo bench -p grafeo-common arena
 ```
 
 ## Building Python Bindings
 
 ```bash
-cd crates/graphos-python
+cd crates/grafeo-python
 
 # Development build
 maturin develop
@@ -167,9 +167,9 @@ Use conventional commit format:
 
 ## Project Links
 
-- **Repository**: <https://github.com/StevenBtw/graphos>
-- **Issues**: <https://github.com/StevenBtw/graphos/issues>
-- **Documentation**: <https://graphos.tech>
+- **Repository**: <https://github.com/StevenBtw/grafeo>
+- **Issues**: <https://github.com/StevenBtw/grafeo/issues>
+- **Documentation**: <https://grafeo.tech>
 
 ## Code of Conduct
 

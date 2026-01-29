@@ -2,13 +2,13 @@
 * @StevenBtw
 
 # Rust crates
-/crates/graphos-common/ @StevenBtw
-/crates/graphos-core/ @StevenBtw
-/crates/graphos-adapters/ @StevenBtw
-/crates/graphos-engine/ @StevenBtw
+/crates/grafeo-common/ @StevenBtw
+/crates/grafeo-core/ @StevenBtw
+/crates/grafeo-adapters/ @StevenBtw
+/crates/grafeo-engine/ @StevenBtw
 
 # Python bindings
-/crates/graphos-python/ @StevenBtw
+/crates/grafeo-python/ @StevenBtw
 
 # CI/CD
 /.github/ @StevenBtw

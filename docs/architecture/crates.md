@@ -1,6 +1,6 @@
 ---
 title: Crate Structure
-description: The five crates that make up Graphos.
+description: The five crates that make up Grafeo.
 tags:
   - architecture
   - crates
@@ -8,17 +8,17 @@ tags:
 
 # Crate Structure
 
-Graphos is organized into five crates with clear responsibilities.
+Grafeo is organized into five crates with clear responsibilities.
 
 ## Dependency Graph
 
 ```mermaid
 graph BT
-    COMMON[graphos-common]
-    CORE[graphos-core]
-    ADAPTERS[graphos-adapters]
-    ENGINE[graphos-engine]
-    PYTHON[graphos-python]
+    COMMON[grafeo-common]
+    CORE[grafeo-core]
+    ADAPTERS[grafeo-adapters]
+    ENGINE[grafeo-engine]
+    PYTHON[grafeo-python]
 
     CORE --> COMMON
     ADAPTERS --> COMMON
@@ -29,7 +29,7 @@ graph BT
     PYTHON --> ENGINE
 ```
 
-## graphos-common
+## grafeo-common
 
 Foundation types and utilities.
 
@@ -40,11 +40,11 @@ Foundation types and utilities.
 | `utils/` | Hashing, error types |
 
 ```rust
-use graphos_common::types::{NodeId, Value};
-use graphos_common::memory::Arena;
+use grafeo_common::types::{NodeId, Value};
+use grafeo_common::memory::Arena;
 ```
 
-## graphos-core
+## grafeo-core
 
 Core data structures and execution engine.
 
@@ -55,12 +55,12 @@ Core data structures and execution engine.
 | `execution/` | DataChunk, operators, pipelines |
 
 ```rust
-use graphos_core::graph::LpgStore;
-use graphos_core::index::BTreeIndex;
-use graphos_core::execution::DataChunk;
+use grafeo_core::graph::LpgStore;
+use grafeo_core::index::BTreeIndex;
+use grafeo_core::execution::DataChunk;
 ```
 
-## graphos-adapters
+## grafeo-adapters
 
 External interfaces and adapters.
 
@@ -72,11 +72,11 @@ External interfaces and adapters.
 | `plugins/` | Plugin system |
 
 ```rust
-use graphos_adapters::query::gql::GqlParser;
-use graphos_adapters::storage::WalBackend;
+use grafeo_adapters::query::gql::GqlParser;
+use grafeo_adapters::storage::WalBackend;
 ```
 
-## graphos-engine
+## grafeo-engine
 
 Database facade and coordination.
 
@@ -88,22 +88,22 @@ Database facade and coordination.
 | `transaction/` | Transaction manager, MVCC |
 
 ```rust
-use graphos_engine::{Database, Session, Config};
+use grafeo_engine::{Database, Session, Config};
 ```
 
-## graphos-python
+## grafeo-python
 
 Python bindings via PyO3.
 
 | Module | Purpose |
 |--------|---------|
-| `database.rs` | PyGraphosDB class |
+| `database.rs` | PyGrafeoDB class |
 | `query.rs` | Query execution |
 | `types.rs` | Type conversions |
 
 ```python
-import graphos
-db = graphos.Database()
+import grafeo
+db = grafeo.Database()
 ```
 
 ## Crate Guidelines

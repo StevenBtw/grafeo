@@ -1,18 +1,18 @@
 ---
 title: Rust API
-description: Using Graphos from Rust.
+description: Using Grafeo from Rust.
 ---
 
 # Rust API
 
-Graphos is written in Rust and provides a native Rust API.
+Grafeo is written in Rust and provides a native Rust API.
 
 ## Quick Start
 
 ```rust
-use graphos::Database;
+use grafeo::Database;
 
-fn main() -> Result<(), graphos::Error> {
+fn main() -> Result<(), grafeo::Error> {
     let db = Database::open_in_memory()?;
     let session = db.session()?;
 

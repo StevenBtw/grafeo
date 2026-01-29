@@ -20,7 +20,7 @@ Measure similarity between nodes or graphs.
 Based on shared neighbors.
 
 ```python
-from graphos.algorithms import node_similarity
+from grafeo.algorithms import node_similarity
 
 similar_nodes = node_similarity(db,
     node_id=1,
@@ -58,7 +58,7 @@ similar_nodes = node_similarity(db,
 Compare two specific nodes.
 
 ```python
-from graphos.algorithms import pairwise_similarity
+from grafeo.algorithms import pairwise_similarity
 
 score = pairwise_similarity(db,
     node_a=1,
@@ -72,7 +72,7 @@ score = pairwise_similarity(db,
 Compare entire graphs or subgraphs.
 
 ```python
-from graphos.algorithms import graph_similarity
+from grafeo.algorithms import graph_similarity
 
 score = graph_similarity(
     graph_a,

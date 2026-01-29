@@ -24,7 +24,7 @@ updates:
 
   # Python dependencies
   - package-ecosystem: "pip"
-    directory: "/crates/graphos-python"
+    directory: "/crates/grafeo-python"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5

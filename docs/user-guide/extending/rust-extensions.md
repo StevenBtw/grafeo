@@ -1,6 +1,6 @@
 ---
 title: Rust Extensions
-description: Extending Graphos with Rust code.
+description: Extending Grafeo with Rust code.
 tags:
   - extending
   - rust
@@ -8,13 +8,13 @@ tags:
 
 # Rust Extensions
 
-Extend Graphos with custom Rust code for maximum performance.
+Extend Grafeo with custom Rust code for maximum performance.
 
 ## Why Rust Extensions?
 
 - **Performance** - Native speed for computationally intensive operations
 - **Type Safety** - Compile-time guarantees
-- **Direct Access** - Access to internal Graphos APIs
+- **Direct Access** - Access to internal Grafeo APIs
 - **Integration** - Use any Rust crate
 
 ## Creating an Extension Crate
@@ -23,20 +23,20 @@ Extend Graphos with custom Rust code for maximum performance.
 
 ```toml
 [package]
-name = "my-graphos-extension"
+name = "my-grafeo-extension"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-graphos-core = "0.1"
-graphos-engine = "0.1"
+grafeo-core = "0.1"
+grafeo-engine = "0.1"
 ```
 
 ### Extension Code
 
 ```rust
-use graphos_core::graph::LpgStore;
-use graphos_engine::{Database, Session};
+use grafeo_core::graph::LpgStore;
+use grafeo_engine::{Database, Session};
 
 /// Custom graph analysis function
 pub fn analyze_connectivity(db: &Database) -> ConnectivityReport {
@@ -68,7 +68,7 @@ pub struct ConnectivityReport {
 ### Graph Store
 
 ```rust
-use graphos_core::graph::lpg::LpgStore;
+use grafeo_core::graph::lpg::LpgStore;
 
 fn process_graph(store: &LpgStore) {
     // Iterate over nodes
@@ -93,7 +93,7 @@ fn process_graph(store: &LpgStore) {
 ### Index Access
 
 ```rust
-use graphos_core::index::BTreeIndex;
+use grafeo_core::index::BTreeIndex;
 
 fn query_index(index: &BTreeIndex<String, NodeId>) {
     // Range query
@@ -108,7 +108,7 @@ fn query_index(index: &BTreeIndex<String, NodeId>) {
 ### Execution Engine
 
 ```rust
-use graphos_core::execution::{DataChunk, Pipeline};
+use grafeo_core::execution::{DataChunk, Pipeline};
 
 fn custom_operator(chunk: DataChunk) -> DataChunk {
     // Process data chunk
@@ -127,7 +127,7 @@ cargo build --release
 ### Use in Application
 
 ```rust
-use my_graphos_extension::analyze_connectivity;
+use my_grafeo_extension::analyze_connectivity;
 
 let db = Database::open("my_graph.db")?;
 let report = analyze_connectivity(&db);
@@ -145,7 +145,7 @@ Use PyO3 to expose Rust extensions to Python:
 use pyo3::prelude::*;
 
 #[pyfunction]
-fn analyze_connectivity_py(db: &PyGraphosDB) -> PyResult<PyDict> {
+fn analyze_connectivity_py(db: &PyGrafeoDB) -> PyResult<PyDict> {
     let report = analyze_connectivity(db.inner());
 
     let dict = PyDict::new(py);

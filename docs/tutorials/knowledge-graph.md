@@ -1,6 +1,6 @@
 ---
 title: Knowledge Graph
-description: Build a knowledge graph with Graphos.
+description: Build a knowledge graph with Grafeo.
 tags:
   - tutorial
   - intermediate
@@ -24,9 +24,9 @@ We'll build a knowledge graph about movies, actors, directors, and genres.
 ## Setup
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.Database()
+db = grafeo.Database()
 ```
 
 ## Create the Knowledge Graph

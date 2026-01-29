@@ -1,30 +1,30 @@
 ---
 title: Quick Start
-description: Get up and running with Graphos in 5 minutes.
+description: Get up and running with Grafeo in 5 minutes.
 ---
 
 # Quick Start
 
-This guide will get you up and running with Graphos in just a few minutes.
+This guide will get you up and running with Grafeo in just a few minutes.
 
 ## Create a Database
 
 === "Python"
 
     ```python
-    import graphos
+    import grafeo
 
     # Create an in-memory database
-    db = graphos.Database()
+    db = grafeo.Database()
 
     # Or create a persistent database
-    db = graphos.Database(path="my_graph.db")
+    db = grafeo.Database(path="my_graph.db")
     ```
 
 === "Rust"
 
     ```rust
-    use graphos::Database;
+    use grafeo::Database;
 
     // Create an in-memory database
     let db = Database::open_in_memory()?;

@@ -1,5 +1,5 @@
 """
-Synthetic dataset generators for testing Graphos.
+Synthetic dataset generators for testing Grafeo.
 
 This module provides various graph generators for testing and benchmarking:
 - Social network graphs (scale-free)
@@ -422,7 +422,7 @@ class CliqueGenerator(SyntheticDataGenerator):
 
 def load_data_into_db(db, generator: SyntheticDataGenerator) -> tuple[int, int]:
     """
-    Load synthetic data into a Graphos database.
+    Load synthetic data into a Grafeo database.
 
     Returns tuple of (node_count, edge_count).
     """

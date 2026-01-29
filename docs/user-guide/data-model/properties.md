@@ -1,6 +1,6 @@
 ---
 title: Properties
-description: Property types and values in Graphos.
+description: Property types and values in Grafeo.
 tags:
   - data-model
   - properties
@@ -8,7 +8,7 @@ tags:
 
 # Properties
 
-Properties are key-value pairs stored on nodes and edges. Graphos supports a rich set of property types.
+Properties are key-value pairs stored on nodes and edges. Grafeo supports a rich set of property types.
 
 ## Supported Types
 

@@ -1,6 +1,6 @@
 ---
 title: Plugins
-description: Creating and using plugins in Graphos.
+description: Creating and using plugins in Grafeo.
 tags:
   - extending
   - plugins
@@ -8,11 +8,11 @@ tags:
 
 # Plugins
 
-Plugins extend Graphos with custom functionality.
+Plugins extend Grafeo with custom functionality.
 
 ## Plugin Architecture
 
-Graphos uses a trait-based plugin system:
+Grafeo uses a trait-based plugin system:
 
 ```rust
 pub trait Plugin: Send + Sync {
@@ -26,7 +26,7 @@ pub trait Plugin: Send + Sync {
 ## Creating a Plugin (Rust)
 
 ```rust
-use graphos_adapters::plugins::{Plugin, PluginContext};
+use grafeo_adapters::plugins::{Plugin, PluginContext};
 
 pub struct MyPlugin {
     name: String,
@@ -61,7 +61,7 @@ fn my_function_impl(args: &[Value]) -> Result<Value> {
 ## Loading Plugins
 
 ```rust
-use graphos::{Database, Config};
+use grafeo::{Database, Config};
 
 let config = Config::builder()
     .plugin_dir("./plugins")

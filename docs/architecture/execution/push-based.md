@@ -8,7 +8,7 @@ tags:
 
 # Push-Based Model
 
-Graphos uses a push-based (producer-driven) execution model.
+Grafeo uses a push-based (producer-driven) execution model.
 
 ## Push vs Pull
 

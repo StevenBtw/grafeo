@@ -1,11 +1,11 @@
 ---
 title: Gremlin Query Language
-description: Learn the Gremlin traversal language for Graphos.
+description: Learn the Gremlin traversal language for Grafeo.
 ---
 
 # Gremlin Query Language
 
-Gremlin is a graph traversal language developed by Apache TinkerPop. Graphos supports Gremlin as an optional query language via feature flag.
+Gremlin is a graph traversal language developed by Apache TinkerPop. Grafeo supports Gremlin as an optional query language via feature flag.
 
 ## Overview
 
@@ -18,13 +18,13 @@ Gremlin support is optional and requires a feature flag:
 === "Rust"
 
     ```bash
-    cargo add graphos-engine --features gremlin
+    cargo add grafeo-engine --features gremlin
     ```
 
 === "Python"
 
     ```bash
-    uv add pygraphos[gremlin]
+    uv add grafeo[gremlin]
     ```
 
 ## Quick Reference
@@ -96,9 +96,9 @@ g.V().has('name', 'Alice').out('KNOWS').count()
 ## Python Usage
 
 ```python
-import graphos
+import grafeo
 
-db = graphos.GraphosDB()
+db = grafeo.GrafeoDB()
 
 # Create some data
 db.execute("INSERT (:Person {name: 'Alice', age: 30})")
@@ -120,9 +120,9 @@ friends = db.execute_gremlin("g.V().has('name', 'Alice').out('KNOWS').values('na
 ## Rust Usage
 
 ```rust
-use graphos_engine::GraphosDB;
+use grafeo_engine::GrafeoDB;
 
-let db = GraphosDB::new_in_memory();
+let db = GrafeoDB::new_in_memory();
 
 // Create data with GQL
 db.execute("INSERT (:Person {name: 'Alice'})").unwrap();

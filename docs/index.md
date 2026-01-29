@@ -1,5 +1,5 @@
 ---
-title: Graphos - High-Performance Graph Database
+title: Grafeo - High-Performance Graph Database
 description: A pure-Rust, embeddable graph database with Python bindings using GQL (ISO standard) query language.
 hide:
   - navigation
@@ -14,18 +14,18 @@ hide:
 
 <div class="hero" markdown>
 
-# **Graphos**
+# **Grafeo**
 
 ### A pure-Rust, high-performance, embeddable graph database
 
 [Get Started](getting-started/index.md){ .md-button .md-button--primary }
-[View on GitHub](https://github.com/StevenBtw/graphos){ .md-button }
+[View on GitHub](https://github.com/StevenBtw/grafeo){ .md-button }
 
 </div>
 
 ---
 
-## Why Graphos?
+## Why Grafeo?
 
 <div class="grid cards" markdown>
 
@@ -51,7 +51,7 @@ hide:
 
     ---
 
-    First-class Python support via PyO3. Use Graphos from Python with a Pythonic API that feels natural.
+    First-class Python support via PyO3. Use Grafeo from Python with a Pythonic API that feels natural.
 
 -   :material-database-search:{ .lg .middle } **Multi-Language Queries**
 
@@ -74,14 +74,14 @@ hide:
 === "Python"
 
     ```bash
-    uv add pygraphos
+    uv add grafeo
     ```
 
     ```python
-    import graphos
+    import grafeo
 
     # Create an in-memory database
-    db = graphos.Database()
+    db = grafeo.Database()
 
     # Create nodes and edges
     with db.session() as session:
@@ -108,13 +108,13 @@ hide:
 === "Rust"
 
     ```bash
-    cargo add graphos
+    cargo add grafeo
     ```
 
     ```rust
-    use graphos::Database;
+    use grafeo::Database;
 
-    fn main() -> Result<(), graphos::Error> {
+    fn main() -> Result<(), grafeo::Error> {
         // Create an in-memory database
         let db = Database::open_in_memory()?;
 
@@ -151,7 +151,7 @@ hide:
 
 ### Dual Data Model Support
 
-Graphos supports both major graph data models with optimized storage for each:
+Grafeo supports both major graph data models with optimized storage for each:
 
 === "LPG (Labeled Property Graph)"
 
@@ -239,24 +239,24 @@ Choose the query language that fits your needs:
 === "Python"
 
     ```bash
-    uv add pygraphos
+    uv add grafeo
     ```
 
 === "Rust"
 
     ```bash
-    cargo add graphos
+    cargo add grafeo
     ```
 
     Or add to your `Cargo.toml`:
 
     ```toml
     [dependencies]
-    graphos = "0.1"
+    grafeo = "0.1"
     ```
 
 ---
 
 ## License
 
-Graphos is licensed under the [Apache-2.0 License](https://github.com/StevenBtw/graphos/blob/main/LICENSE).
+Grafeo is licensed under the [Apache-2.0 License](https://github.com/StevenBtw/grafeo/blob/main/LICENSE).

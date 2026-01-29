@@ -7,9 +7,9 @@ Run with: pytest tests/python/test_query_languages.py -v
 import pytest
 
 
-# Try to import graphos
+# Try to import grafeo
 try:
-    from graphos import GraphosDB
+    from grafeo import GrafeoDB
     GRAPHOS_AVAILABLE = True
 except ImportError:
     GRAPHOS_AVAILABLE = False
@@ -17,7 +17,7 @@ except ImportError:
 
 pytestmark = pytest.mark.skipif(
     not GRAPHOS_AVAILABLE,
-    reason="Graphos Python bindings not installed"
+    reason="Grafeo Python bindings not installed"
 )
 
 
@@ -26,7 +26,7 @@ class TestGQLQueries:
 
     def setup_method(self):
         """Create a database with test data."""
-        self.db = GraphosDB()
+        self.db = GrafeoDB()
         self._setup_test_data()
 
     def _setup_test_data(self):
@@ -232,7 +232,7 @@ class TestCypherQueries:
     def setup_method(self):
         """Create a database with test data."""
         # Note: Cypher support may be feature-gated
-        self.db = GraphosDB()
+        self.db = GrafeoDB()
         self._setup_test_data()
 
     def _setup_test_data(self):
@@ -371,7 +371,7 @@ class TestQueryCompatibility:
 
     def setup_method(self):
         """Create identical test data."""
-        self.db = GraphosDB()
+        self.db = GrafeoDB()
 
         # Create a simple graph
         self.a = self.db.create_node(["Node"], {"value": 1})
@@ -410,7 +410,7 @@ class TestGremlinQueries:
 
     def setup_method(self):
         """Create a database with test data."""
-        self.db = GraphosDB()
+        self.db = GrafeoDB()
         self._setup_test_data()
 
     def _setup_test_data(self):
@@ -505,7 +505,7 @@ class TestGraphQLQueries:
 
     def setup_method(self):
         """Create a database with test data."""
-        self.db = GraphosDB()
+        self.db = GrafeoDB()
         self._setup_test_data()
 
     def _setup_test_data(self):
@@ -612,7 +612,7 @@ class TestMultiLanguageCompatibility:
 
     def setup_method(self):
         """Create identical test data for comparison."""
-        self.db = GraphosDB()
+        self.db = GrafeoDB()
 
         # Create a simple graph
         self.a = self.db.create_node(["Person"], {"name": "Alice", "age": 30})

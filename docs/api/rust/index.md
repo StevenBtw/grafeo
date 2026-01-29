@@ -5,21 +5,21 @@ description: Rust API reference.
 
 # Rust API Reference
 
-Graphos is written in Rust and provides a native Rust API.
+Grafeo is written in Rust and provides a native Rust API.
 
 ## Crates
 
 | Crate | docs.rs |
 |-------|---------|
-| graphos | [docs.rs/graphos](https://docs.rs/graphos) |
-| graphos-engine | [docs.rs/graphos-engine](https://docs.rs/graphos-engine) |
+| grafeo | [docs.rs/grafeo](https://docs.rs/grafeo) |
+| grafeo-engine | [docs.rs/grafeo-engine](https://docs.rs/grafeo-engine) |
 
 ## Quick Start
 
 ```rust
-use graphos::Database;
+use grafeo::Database;
 
-fn main() -> Result<(), graphos::Error> {
+fn main() -> Result<(), grafeo::Error> {
     let db = Database::open_in_memory()?;
     let session = db.session()?;
 
@@ -31,13 +31,13 @@ fn main() -> Result<(), graphos::Error> {
 
 ## Crate Documentation
 
-- [graphos-common](common.md) - Foundation types
-- [graphos-core](core.md) - Core data structures
-- [graphos-adapters](adapters.md) - Parsers and storage
-- [graphos-engine](engine.md) - Database facade
+- [grafeo-common](common.md) - Foundation types
+- [grafeo-core](core.md) - Core data structures
+- [grafeo-adapters](adapters.md) - Parsers and storage
+- [grafeo-engine](engine.md) - Database facade
 
 ## API Stability
 
-The public API (`graphos` and `graphos-engine`) follows semver.
+The public API (`grafeo` and `grafeo-engine`) follows semver.
 
 Internal crates may have breaking changes in minor versions.

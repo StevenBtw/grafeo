@@ -14,7 +14,7 @@ tags:
 cargo test --workspace
 
 # Specific crate
-cargo test -p graphos-core
+cargo test -p grafeo-core
 
 # Single test
 cargo test test_name -- --nocapture
@@ -37,11 +37,11 @@ cargo tarpaulin --workspace --out Html
 
 | Crate | Target |
 |-------|--------|
-| graphos-common | 95% |
-| graphos-core | 90% |
-| graphos-adapters | 85% |
-| graphos-engine | 85% |
-| graphos-python | 80% |
+| grafeo-common | 95% |
+| grafeo-core | 90% |
+| grafeo-adapters | 85% |
+| grafeo-engine | 85% |
+| grafeo-python | 80% |
 
 ## Test Categories
 

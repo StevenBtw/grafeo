@@ -1,6 +1,6 @@
 # Project Information
-site_name: Graphos
-site_url: https://graphos.tech
+site_name: Grafeo
+site_url: https://grafeo.dev
 site_author: S.T. Grond
 site_description: >-
   A pure-Rust, high-performance, embeddable graph database with Python bindings.
@@ -8,8 +8,8 @@ site_description: >-
   Gremlin, GraphQL, SPARQL), ACID transactions, and extensible storage backends.
 
 # Repository
-repo_name: StevenBtw/graphos
-repo_url: https://github.com/StevenBtw/graphos
+repo_name: StevenBtw/grafeo
+repo_url: https://github.com/StevenBtw/grafeo
 edit_uri: edit/main/docs/
 
 # Copyright
@@ -144,13 +144,13 @@ extra_javascript:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/StevenBtw/graphos
+      link: https://github.com/StevenBtw/grafeo
       name: GitHub
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/pygraphos/
+      link: https://pypi.org/project/grafeo/
       name: PyPI
     - icon: simple/rust
-      link: https://crates.io/crates/graphos
+      link: https://crates.io/crates/grafeo
       name: crates.io
 
   version:
@@ -233,7 +233,7 @@ nav:
       - In-Memory Mode: user-guide/persistence/in-memory.md
       - Persistent Storage: user-guide/persistence/persistent.md
       - WAL Recovery: user-guide/persistence/wal.md
-    - Extending Graphos:
+    - Extending Grafeo:
       - user-guide/extending/index.md
       - Plugins: user-guide/extending/plugins.md
       - Storage Backends: user-guide/extending/storage-backends.md
@@ -290,17 +290,17 @@ nav:
     - api/index.md
     - Python:
       - api/python/index.md
-      - graphos.Database: api/python/database.md
-      - graphos.Node: api/python/node.md
-      - graphos.Edge: api/python/edge.md
-      - graphos.QueryResult: api/python/result.md
-      - graphos.Transaction: api/python/transaction.md
+      - grafeo.Database: api/python/database.md
+      - grafeo.Node: api/python/node.md
+      - grafeo.Edge: api/python/edge.md
+      - grafeo.QueryResult: api/python/result.md
+      - grafeo.Transaction: api/python/transaction.md
     - Rust:
       - api/rust/index.md
-      - graphos-common: api/rust/common.md
-      - graphos-core: api/rust/core.md
-      - graphos-adapters: api/rust/adapters.md
-      - graphos-engine: api/rust/engine.md
+      - grafeo-common: api/rust/common.md
+      - grafeo-core: api/rust/core.md
+      - grafeo-adapters: api/rust/adapters.md
+      - grafeo-engine: api/rust/engine.md
 
   - Comparisons:
     - comparisons/index.md

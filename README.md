@@ -1,12 +1,12 @@
-# Graphos
+# Grafeo
 
-[![CI](https://github.com/StevenBtw/graphos/actions/workflows/ci.yml/badge.svg)](https://github.com/StevenBtw/graphos/actions/workflows/ci.yml)
-[![Docs](https://github.com/StevenBtw/graphos/actions/workflows/docs.yml/badge.svg)](https://github.com/StevenBtw/graphos/actions/workflows/docs.yml)
-[![codecov](https://codecov.io/gh/StevenBtw/graphos/graph/badge.svg)](https://codecov.io/gh/StevenBtw/graphos)
-[![Crates.io](https://img.shields.io/crates/v/graphos.svg)](https://crates.io/crates/graphos)
-[![PyPI](https://img.shields.io/pypi/v/pygraphos.svg)](https://pypi.org/project/pygraphos/)
+[![CI](https://github.com/StevenBtw/grafeo/actions/workflows/ci.yml/badge.svg)](https://github.com/StevenBtw/grafeo/actions/workflows/ci.yml)
+[![Docs](https://github.com/StevenBtw/grafeo/actions/workflows/docs.yml/badge.svg)](https://github.com/StevenBtw/grafeo/actions/workflows/docs.yml)
+[![codecov](https://codecov.io/gh/StevenBtw/grafeo/graph/badge.svg)](https://codecov.io/gh/StevenBtw/grafeo)
+[![Crates.io](https://img.shields.io/crates/v/grafeo.svg)](https://crates.io/crates/grafeo)
+[![PyPI](https://img.shields.io/pypi/v/grafeo.svg)](https://pypi.org/project/grafeo/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Docs](https://img.shields.io/badge/docs-graphos.tech-blue)](https://graphos.tech)
+[![Docs](https://img.shields.io/badge/docs-grafeo.tech-blue)](https://grafeo.tech)
 [![MSRV](https://img.shields.io/badge/MSRV-1.91.1-blue)](https://www.rust-lang.org)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org)
 
@@ -36,7 +36,7 @@ A pure-Rust, high-performance, embeddable graph database supporting both **Label
 | GraphQL | ✅ | ✅ | Feature flag |
 | SPARQL (W3C 1.1) | — | ✅ | Feature flag |
 
-Graphos uses a modular translator architecture where query languages are parsed into ASTs, then translated to a unified logical plan that executes against the appropriate storage backend (LPG or RDF).
+Grafeo uses a modular translator architecture where query languages are parsed into ASTs, then translated to a unified logical plan that executes against the appropriate storage backend (LPG or RDF).
 
 ### Data Models
 
@@ -48,22 +48,22 @@ Graphos uses a modular translator architecture where query languages are parsed 
 ### Rust
 
 ```bash
-cargo add graphos
+cargo add grafeo
 ```
 
 With additional query languages:
 
 ```bash
-cargo add graphos --features cypher   # Add Cypher support
-cargo add graphos --features gremlin  # Add Gremlin support
-cargo add graphos --features graphql  # Add GraphQL support
-cargo add graphos --features full     # All query languages
+cargo add grafeo --features cypher   # Add Cypher support
+cargo add grafeo --features gremlin  # Add Gremlin support
+cargo add grafeo --features graphql  # Add GraphQL support
+cargo add grafeo --features full     # All query languages
 ```
 
 ### Python
 
 ```bash
-uv add pygraphos
+uv add grafeo
 ```
 
 ## Quick Start
@@ -71,13 +71,13 @@ uv add pygraphos
 ### Python
 
 ```python
-import graphos
+import grafeo
 
 # Create an in-memory database
-db = graphos.GraphosDB()
+db = grafeo.GrafeoDB()
 
 # Or open/create a persistent database
-# db = graphos.GraphosDB("/path/to/database")
+# db = grafeo.GrafeoDB("/path/to/database")
 
 # Create nodes using GQL
 db.execute("INSERT (:Person {name: 'Alice', age: 30})")
@@ -106,14 +106,14 @@ print(f"Created node with ID: {node.id}")
 ### Rust
 
 ```rust
-use graphos::GraphosDB;
+use grafeo::GrafeoDB;
 
 fn main() {
     // Create an in-memory database
-    let db = GraphosDB::new_in_memory();
+    let db = GrafeoDB::new_in_memory();
 
     // Or open a persistent database
-    // let db = GraphosDB::open("./my_database").unwrap();
+    // let db = GrafeoDB::open("./my_database").unwrap();
 
     // Execute GQL queries
     db.execute("INSERT (:Person {name: 'Alice'})").unwrap();
@@ -127,7 +127,7 @@ fn main() {
 
 ## Documentation
 
-Full documentation is available at [graphos.tech](https://graphos.tech).
+Full documentation is available at [grafeo.tech](https://grafeo.tech).
 
 ## Contributing
 

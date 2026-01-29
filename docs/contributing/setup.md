@@ -16,8 +16,8 @@ tags:
 ## Clone Repository
 
 ```bash
-git clone https://github.com/StevenBtw/graphos.git
-cd graphos
+git clone https://github.com/StevenBtw/grafeo.git
+cd grafeo
 ```
 
 ## Build
@@ -39,7 +39,7 @@ cargo test --workspace
 ## Build Python Package
 
 ```bash
-cd crates/graphos-python
+cd crates/grafeo-python
 uv add maturin
 maturin develop
 ```

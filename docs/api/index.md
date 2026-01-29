@@ -1,6 +1,6 @@
 ---
 title: API Reference
-description: Complete API reference for Graphos.
+description: Complete API reference for Grafeo.
 ---
 
 # API Reference
@@ -9,29 +9,29 @@ Complete API documentation for Python and Rust.
 
 ## Python API
 
-The Python API provides a Pythonic interface to Graphos.
+The Python API provides a Pythonic interface to Grafeo.
 
 - [Python Overview](python/index.md)
-- [graphos.Database](python/database.md)
-- [graphos.Node](python/node.md)
-- [graphos.Edge](python/edge.md)
-- [graphos.QueryResult](python/result.md)
-- [graphos.Transaction](python/transaction.md)
+- [grafeo.Database](python/database.md)
+- [grafeo.Node](python/node.md)
+- [grafeo.Edge](python/edge.md)
+- [grafeo.QueryResult](python/result.md)
+- [grafeo.Transaction](python/transaction.md)
 
 ## Rust API
 
-The Rust API provides direct access to Graphos internals.
+The Rust API provides direct access to Grafeo internals.
 
 - [Rust Overview](rust/index.md)
-- [graphos-common](rust/common.md)
-- [graphos-core](rust/core.md)
-- [graphos-adapters](rust/adapters.md)
-- [graphos-engine](rust/engine.md)
+- [grafeo-common](rust/common.md)
+- [grafeo-core](rust/core.md)
+- [grafeo-adapters](rust/adapters.md)
+- [grafeo-engine](rust/engine.md)
 
 ## API Stability
 
 | API | Stability |
 |-----|-----------|
 | Python | Stable |
-| Rust (graphos-engine) | Stable |
+| Rust (grafeo-engine) | Stable |
 | Rust (internal crates) | Unstable |

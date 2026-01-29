@@ -39,8 +39,8 @@ When build side exceeds memory:
 ## Configuration
 
 ```python
-db = graphos.Database(
+db = grafeo.Database(
     memory_limit=4 * 1024 * 1024 * 1024,  # 4 GB
-    spill_directory="/tmp/graphos_spill"
+    spill_directory="/tmp/grafeo_spill"
 )
 ```

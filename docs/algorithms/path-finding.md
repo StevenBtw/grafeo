@@ -15,7 +15,7 @@ Algorithms for finding paths between nodes.
 Find the shortest path between two nodes.
 
 ```python
-from graphos.algorithms import shortest_path
+from grafeo.algorithms import shortest_path
 
 path = shortest_path(db,
     source=node_a,
@@ -44,7 +44,7 @@ print(f"Total weight: {path.total_weight}")
 Find all paths of minimum length.
 
 ```python
-from graphos.algorithms import all_shortest_paths
+from grafeo.algorithms import all_shortest_paths
 
 paths = all_shortest_paths(db,
     source=node_a,
@@ -59,7 +59,7 @@ print(f"Found {len(paths)} shortest paths")
 Find shortest paths from one node to all others.
 
 ```python
-from graphos.algorithms import sssp
+from grafeo.algorithms import sssp
 
 distances = sssp(db, source=node_a)
 
@@ -72,7 +72,7 @@ for node_id, distance in distances.items():
 Precompute all pairwise distances.
 
 ```python
-from graphos.algorithms import apsp
+from grafeo.algorithms import apsp
 
 distances = apsp(db)
 
@@ -85,7 +85,7 @@ d = distances.get(node_a, node_b)
 Find k shortest paths (may not be disjoint).
 
 ```python
-from graphos.algorithms import k_shortest_paths
+from grafeo.algorithms import k_shortest_paths
 
 paths = k_shortest_paths(db,
     source=node_a,

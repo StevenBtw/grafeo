@@ -137,7 +137,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: build
-          args: --release --out dist -m crates/graphos-python/Cargo.toml
+          args: --release --out dist -m crates/grafeo-python/Cargo.toml
           sccache: 'true'
 
       - name: Install Python package and test dependencies
@@ -147,7 +147,7 @@ jobs:
           pip install pytest pytest-asyncio
 
       - name: Run Python tests
-        run: pytest tests/python/ -v --ignore=tests/python/benchmark_graphos.py --ignore=tests/python/benchmark_phases.py
+        run: pytest tests/python/ -v --ignore=tests/python/benchmark_grafeo.py --ignore=tests/python/benchmark_phases.py
 
   # Benchmark (only on main)
   benchmark:

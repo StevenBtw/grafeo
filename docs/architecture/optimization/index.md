@@ -5,7 +5,7 @@ description: Cost-based query optimization.
 
 # Query Optimization
 
-Graphos uses cost-based optimization to select efficient query plans.
+Grafeo uses cost-based optimization to select efficient query plans.
 
 ## Optimizer Pipeline
 
