@@ -567,7 +567,7 @@ impl GremlinTranslator {
                     variable: var.to_string(),
                     property: key.clone(),
                 };
-                self.translate_predicate(pred, prop)
+                Self::translate_predicate(pred, prop)
             }
             ast::HasStep::LabelKeyValue(label, key, value) => {
                 // has(label, key, value) - check label AND property
@@ -596,7 +596,6 @@ impl GremlinTranslator {
     }
 
     fn translate_predicate(
-        &self,
         pred: &ast::Predicate,
         expr: LogicalExpression,
     ) -> Result<LogicalExpression> {
@@ -683,9 +682,9 @@ impl GremlinTranslator {
                 right: Box::new(LogicalExpression::Literal(Value::String(s.clone().into()))),
             }),
             ast::Predicate::And(preds) => {
-                let mut result = self.translate_predicate(&preds[0], expr.clone())?;
+                let mut result = Self::translate_predicate(&preds[0], expr.clone())?;
                 for pred in &preds[1..] {
-                    let right = self.translate_predicate(pred, expr.clone())?;
+                    let right = Self::translate_predicate(pred, expr.clone())?;
                     result = LogicalExpression::Binary {
                         left: Box::new(result),
                         op: BinaryOp::And,
@@ -695,9 +694,9 @@ impl GremlinTranslator {
                 Ok(result)
             }
             ast::Predicate::Or(preds) => {
-                let mut result = self.translate_predicate(&preds[0], expr.clone())?;
+                let mut result = Self::translate_predicate(&preds[0], expr.clone())?;
                 for pred in &preds[1..] {
-                    let right = self.translate_predicate(pred, expr.clone())?;
+                    let right = Self::translate_predicate(pred, expr.clone())?;
                     result = LogicalExpression::Binary {
                         left: Box::new(result),
                         op: BinaryOp::Or,
@@ -708,7 +707,7 @@ impl GremlinTranslator {
             }
             ast::Predicate::Not(pred) => Ok(LogicalExpression::Unary {
                 op: UnaryOp::Not,
-                operand: Box::new(self.translate_predicate(pred, expr)?),
+                operand: Box::new(Self::translate_predicate(pred, expr)?),
             }),
             _ => Err(Error::Internal("Unsupported predicate".to_string())),
         }

@@ -305,7 +305,7 @@ impl Optimizer {
             }
             LogicalOperator::Aggregate(agg) => {
                 for expr in &agg.group_by {
-                    self.collect_variables(expr, vars);
+                    Self::collect_variables(expr, vars);
                 }
                 for agg_expr in &agg.aggregates {
                     if let Some(alias) = &agg_expr.alias {
@@ -335,12 +335,12 @@ impl Optimizer {
     /// Extracts all variable names referenced in an expression.
     fn extract_variables(&self, expr: &LogicalExpression) -> HashSet<String> {
         let mut vars = HashSet::new();
-        self.collect_variables(expr, &mut vars);
+        Self::collect_variables(expr, &mut vars);
         vars
     }
 
     /// Recursively collects variable names from an expression.
-    fn collect_variables(&self, expr: &LogicalExpression, vars: &mut HashSet<String>) {
+    fn collect_variables(expr: &LogicalExpression, vars: &mut HashSet<String>) {
         match expr {
             LogicalExpression::Variable(name) => {
                 vars.insert(name.clone());
@@ -349,38 +349,38 @@ impl Optimizer {
                 vars.insert(variable.clone());
             }
             LogicalExpression::Binary { left, right, .. } => {
-                self.collect_variables(left, vars);
-                self.collect_variables(right, vars);
+                Self::collect_variables(left, vars);
+                Self::collect_variables(right, vars);
             }
             LogicalExpression::Unary { operand, .. } => {
-                self.collect_variables(operand, vars);
+                Self::collect_variables(operand, vars);
             }
             LogicalExpression::FunctionCall { args, .. } => {
                 for arg in args {
-                    self.collect_variables(arg, vars);
+                    Self::collect_variables(arg, vars);
                 }
             }
             LogicalExpression::List(items) => {
                 for item in items {
-                    self.collect_variables(item, vars);
+                    Self::collect_variables(item, vars);
                 }
             }
             LogicalExpression::Map(pairs) => {
                 for (_, value) in pairs {
-                    self.collect_variables(value, vars);
+                    Self::collect_variables(value, vars);
                 }
             }
             LogicalExpression::IndexAccess { base, index } => {
-                self.collect_variables(base, vars);
-                self.collect_variables(index, vars);
+                Self::collect_variables(base, vars);
+                Self::collect_variables(index, vars);
             }
             LogicalExpression::SliceAccess { base, start, end } => {
-                self.collect_variables(base, vars);
+                Self::collect_variables(base, vars);
                 if let Some(s) = start {
-                    self.collect_variables(s, vars);
+                    Self::collect_variables(s, vars);
                 }
                 if let Some(e) = end {
-                    self.collect_variables(e, vars);
+                    Self::collect_variables(e, vars);
                 }
             }
             LogicalExpression::Case {
@@ -389,14 +389,14 @@ impl Optimizer {
                 else_clause,
             } => {
                 if let Some(op) = operand {
-                    self.collect_variables(op, vars);
+                    Self::collect_variables(op, vars);
                 }
                 for (cond, result) in when_clauses {
-                    self.collect_variables(cond, vars);
-                    self.collect_variables(result, vars);
+                    Self::collect_variables(cond, vars);
+                    Self::collect_variables(result, vars);
                 }
                 if let Some(else_expr) = else_clause {
-                    self.collect_variables(else_expr, vars);
+                    Self::collect_variables(else_expr, vars);
                 }
             }
             LogicalExpression::Labels(var)
@@ -411,11 +411,11 @@ impl Optimizer {
                 map_expr,
                 ..
             } => {
-                self.collect_variables(list_expr, vars);
+                Self::collect_variables(list_expr, vars);
                 if let Some(filter) = filter_expr {
-                    self.collect_variables(filter, vars);
+                    Self::collect_variables(filter, vars);
                 }
-                self.collect_variables(map_expr, vars);
+                Self::collect_variables(map_expr, vars);
             }
             LogicalExpression::ExistsSubquery(_) | LogicalExpression::CountSubquery(_) => {
                 // Subqueries have their own variable scope

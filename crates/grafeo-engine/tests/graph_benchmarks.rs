@@ -35,20 +35,21 @@ mod scale {
 }
 
 // In release mode, use larger datasets for meaningful benchmarks
+// Keep values reasonable for CI (~10-30s per test max)
 #[cfg(not(debug_assertions))]
 mod scale {
-    pub const SMALL_SCALE: usize = 10_000;
-    pub const MEDIUM_SCALE: usize = 100_000;
-    pub const LARGE_SCALE: usize = 500_000;
-    pub const NODE_COUNT: usize = 100_000;
-    pub const TRAVERSAL_NODES: usize = 10_000;
-    pub const FILTER_NODES: usize = 50_000;
-    pub const LOOKUP_NODES: usize = 100_000;
-    pub const CONCURRENT_NODES: usize = 50_000;
-    pub const PATTERN_NODES: usize = 5_000;
-    pub const MIXED_NODES: usize = 10_000;
-    pub const AGGREGATION_NODES: usize = 50_000;
-    pub const EDGE_NODES: usize = 10_000;
+    pub const SMALL_SCALE: usize = 500;
+    pub const MEDIUM_SCALE: usize = 2_000;
+    pub const LARGE_SCALE: usize = 5_000;
+    pub const NODE_COUNT: usize = 5_000;
+    pub const TRAVERSAL_NODES: usize = 1_000;
+    pub const FILTER_NODES: usize = 2_000;
+    pub const LOOKUP_NODES: usize = 1_000;
+    pub const CONCURRENT_NODES: usize = 2_000;
+    pub const PATTERN_NODES: usize = 500;
+    pub const MIXED_NODES: usize = 1_000;
+    pub const AGGREGATION_NODES: usize = 2_000;
+    pub const EDGE_NODES: usize = 500;
 }
 
 use scale::*;
