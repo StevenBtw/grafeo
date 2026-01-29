@@ -95,9 +95,7 @@ fn bench_aggregation_count(c: &mut Criterion) {
 
     c.bench_function("query_count_all", |b| {
         b.iter(|| {
-            let result = session
-                .execute("MATCH (n:Person) RETURN COUNT(n)")
-                .unwrap();
+            let result = session.execute("MATCH (n:Person) RETURN COUNT(n)").unwrap();
             black_box(result)
         });
     });

@@ -854,5 +854,7 @@ fn bench_summary() {
     println!("\n  Run fast benchmarks only (default):");
     println!("    cargo test -p graphos-engine --release -- graph_benchmarks --nocapture");
     println!("\n  Run ALL benchmarks including heavy ones:");
-    println!("    cargo test -p graphos-engine --release -- graph_benchmarks --nocapture --include-ignored");
+    println!(
+        "    cargo test -p graphos-engine --release -- graph_benchmarks --nocapture --include-ignored"
+    );
 }
