@@ -91,11 +91,16 @@ impl<'a> Parser<'a> {
             TokenKind::Construct => Ok(QueryForm::Construct(self.parse_construct_query()?)),
             TokenKind::Ask => Ok(QueryForm::Ask(self.parse_ask_query()?)),
             TokenKind::Describe => Ok(QueryForm::Describe(self.parse_describe_query()?)),
-            TokenKind::Insert | TokenKind::Delete | TokenKind::Load | TokenKind::Clear
-            | TokenKind::Drop | TokenKind::Create | TokenKind::Copy | TokenKind::Move
-            | TokenKind::Add | TokenKind::With => {
-                Ok(QueryForm::Update(self.parse_update_operation()?))
-            }
+            TokenKind::Insert
+            | TokenKind::Delete
+            | TokenKind::Load
+            | TokenKind::Clear
+            | TokenKind::Drop
+            | TokenKind::Create
+            | TokenKind::Copy
+            | TokenKind::Move
+            | TokenKind::Add
+            | TokenKind::With => Ok(QueryForm::Update(self.parse_update_operation()?)),
             _ => Err(self.error("expected SELECT, CONSTRUCT, ASK, DESCRIBE, or update operation")),
         }
     }

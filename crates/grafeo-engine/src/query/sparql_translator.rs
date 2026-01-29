@@ -209,13 +209,9 @@ impl SparqlTranslator {
                 source,
                 destination,
             } => self.translate_load(*silent, source, destination.as_ref()),
-            ast::UpdateOperation::Clear { silent, target } => {
-                self.translate_clear(*silent, target)
-            }
+            ast::UpdateOperation::Clear { silent, target } => self.translate_clear(*silent, target),
             ast::UpdateOperation::Drop { silent, target } => self.translate_drop(*silent, target),
-            ast::UpdateOperation::Create { silent, graph } => {
-                self.translate_create(*silent, graph)
-            }
+            ast::UpdateOperation::Create { silent, graph } => self.translate_create(*silent, graph),
             ast::UpdateOperation::Copy {
                 silent,
                 source,
@@ -241,10 +237,7 @@ impl SparqlTranslator {
             let subject = self.translate_triple_term(&quad.triple.subject)?;
             let predicate = self.translate_property_path(&quad.triple.predicate)?;
             let object = self.translate_triple_term(&quad.triple.object)?;
-            let graph = quad
-                .graph
-                .as_ref()
-                .map(|g| self.resolve_variable_or_iri(g));
+            let graph = quad.graph.as_ref().map(|g| self.resolve_variable_or_iri(g));
 
             ops.push(LogicalOperator::InsertTriple(InsertTripleOp {
                 subject,
@@ -274,10 +267,7 @@ impl SparqlTranslator {
             let subject = self.translate_triple_term(&quad.triple.subject)?;
             let predicate = self.translate_property_path(&quad.triple.predicate)?;
             let object = self.translate_triple_term(&quad.triple.object)?;
-            let graph = quad
-                .graph
-                .as_ref()
-                .map(|g| self.resolve_variable_or_iri(g));
+            let graph = quad.graph.as_ref().map(|g| self.resolve_variable_or_iri(g));
 
             ops.push(LogicalOperator::DeleteTriple(DeleteTripleOp {
                 subject,
@@ -434,10 +424,9 @@ impl SparqlTranslator {
 
     fn translate_clear(&mut self, silent: bool, target: &ast::GraphTarget) -> Result<LogicalPlan> {
         let graph = self.translate_graph_target(target);
-        Ok(LogicalPlan::new(LogicalOperator::ClearGraph(ClearGraphOp {
-            graph,
-            silent,
-        })))
+        Ok(LogicalPlan::new(LogicalOperator::ClearGraph(
+            ClearGraphOp { graph, silent },
+        )))
     }
 
     fn translate_drop(&mut self, silent: bool, target: &ast::GraphTarget) -> Result<LogicalPlan> {
