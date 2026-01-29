@@ -8,6 +8,7 @@ use grafeo_common::utils::error::{Error, QueryError, QueryErrorKind, Result, Sou
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
     current: Token,
+    peeked: Option<Token>,
     source: &'a str,
 }
 
@@ -19,6 +20,7 @@ impl<'a> Parser<'a> {
         Self {
             lexer,
             current,
+            peeked: None,
             source: input,
         }
     }
@@ -131,7 +133,18 @@ impl<'a> Parser<'a> {
             TokenKind::Delete => self
                 .parse_delete()
                 .map(|s| Statement::DataModification(DataModificationStatement::Delete(s))),
-            TokenKind::Create => self.parse_create_schema().map(Statement::Schema),
+            TokenKind::Create => {
+                // Check if CREATE is followed by a pattern (Cypher-style) or NODE/EDGE (GQL schema)
+                let next = self.peek_kind();
+                if next == TokenKind::LParen {
+                    // Cypher-style: CREATE (n:Label {...}) - treat as INSERT
+                    self.parse_create_as_insert()
+                        .map(|s| Statement::DataModification(DataModificationStatement::Insert(s)))
+                } else {
+                    // GQL schema: CREATE NODE TYPE / CREATE EDGE TYPE
+                    self.parse_create_schema().map(Statement::Schema)
+                }
+            }
             _ => Err(self.error("Expected MATCH, INSERT, DELETE, MERGE, UNWIND, or CREATE")),
         }
     }
@@ -143,6 +156,8 @@ impl<'a> Parser<'a> {
         let mut match_clauses = Vec::new();
         let mut unwind_clauses = Vec::new();
         let mut merge_clauses = Vec::new();
+        let mut create_clauses = Vec::new();
+        let mut delete_clauses = Vec::new();
 
         // Parse initial clauses (MATCH, OPTIONAL MATCH, UNWIND, MERGE)
         loop {
@@ -173,6 +188,16 @@ impl<'a> Parser<'a> {
             set_clauses.push(self.parse_set_clause()?);
         }
 
+        // Parse CREATE clauses (Cypher-style: MATCH ... CREATE ...)
+        while self.current.kind == TokenKind::Create {
+            create_clauses.push(self.parse_create_clause_in_query()?);
+        }
+
+        // Parse DELETE clauses (Cypher-style: MATCH ... DELETE ...)
+        while self.current.kind == TokenKind::Delete || self.current.kind == TokenKind::Detach {
+            delete_clauses.push(self.parse_delete_clause_in_query()?);
+        }
+
         // Parse WITH clauses
         let mut with_clauses = Vec::new();
         while self.current.kind == TokenKind::With {
@@ -195,11 +220,15 @@ impl<'a> Parser<'a> {
             }
         }
 
-        // Parse RETURN clause (optional if we have SET or MERGE clauses)
+        // Parse RETURN clause (optional if we have SET, MERGE, CREATE, or DELETE clauses)
         let return_clause = if self.current.kind == TokenKind::Return {
             self.parse_return_clause()?
-        } else if !set_clauses.is_empty() || !merge_clauses.is_empty() {
-            // For SET-only or MERGE-only queries, return empty clause
+        } else if !set_clauses.is_empty()
+            || !merge_clauses.is_empty()
+            || !create_clauses.is_empty()
+            || !delete_clauses.is_empty()
+        {
+            // For mutation-only queries, return empty clause
             ReturnClause {
                 distinct: false,
                 items: Vec::new(),
@@ -219,6 +248,8 @@ impl<'a> Parser<'a> {
             with_clauses,
             unwind_clauses,
             merge_clauses,
+            create_clauses,
+            delete_clauses,
             return_clause,
             span: Some(SourceSpan::new(span_start, self.current.span.end, 1, 1)),
         })
@@ -400,17 +431,57 @@ impl<'a> Parser<'a> {
         self.expect(TokenKind::Match)?;
 
         let mut patterns = Vec::new();
-        patterns.push(self.parse_pattern()?);
+        patterns.push(self.parse_aliased_pattern()?);
 
         while self.current.kind == TokenKind::Comma {
             self.advance();
-            patterns.push(self.parse_pattern()?);
+            patterns.push(self.parse_aliased_pattern()?);
         }
 
         Ok(MatchClause {
             optional,
             patterns,
             span: Some(SourceSpan::new(span_start, self.current.span.end, 1, 1)),
+        })
+    }
+
+    /// Parses a pattern with optional alias and path function.
+    /// Supports: `p = shortestPath((a)-[*]-(b))` and `p = (a)-[*]-(b)` and `(a)-[*]-(b)`
+    fn parse_aliased_pattern(&mut self) -> Result<AliasedPattern> {
+        let mut alias = None;
+        let mut path_function = None;
+
+        // Check for pattern alias: identifier = ...
+        if self.is_identifier() && self.peek_kind() == TokenKind::Eq {
+            alias = Some(self.get_identifier_name());
+            self.advance(); // consume identifier
+            self.advance(); // consume =
+
+            // Check for path function: shortestPath(...) or allShortestPaths(...)
+            if self.is_identifier() {
+                let func_name = self.get_identifier_name().to_lowercase();
+                if func_name == "shortestpath" {
+                    path_function = Some(PathFunction::ShortestPath);
+                    self.advance(); // consume function name
+                    self.expect(TokenKind::LParen)?;
+                } else if func_name == "allshortestpaths" {
+                    path_function = Some(PathFunction::AllShortestPaths);
+                    self.advance(); // consume function name
+                    self.expect(TokenKind::LParen)?;
+                }
+            }
+        }
+
+        let pattern = self.parse_pattern()?;
+
+        if path_function.is_some() {
+            self.expect(TokenKind::RParen)?;
+        }
+
+        Ok(AliasedPattern {
+            alias,
+            path_function,
+            pattern,
         })
     }
 
@@ -519,41 +590,62 @@ impl<'a> Parser<'a> {
         // 1. `-[...]->` or `-[:TYPE]->` or `-[:TYPE*1..3]->` (direction determined by trailing arrow)
         // 2. `->` or `<-` or `--` (direction determined by leading arrow)
 
-        let (variable, types, min_hops, max_hops, direction) =
+        let (variable, types, min_hops, max_hops, properties, direction) =
             if self.current.kind == TokenKind::Minus {
                 // Pattern: -[...]->(target) or -[...]-(target)
                 self.advance();
 
-                // Parse [variable:TYPE*min..max]
-                let (var, edge_types, min_h, max_h) = if self.current.kind == TokenKind::LBracket {
-                    self.advance();
-
-                    let v = if self.is_identifier() && self.peek_kind() != TokenKind::Colon {
-                        let name = self.get_identifier_name();
+                // Parse [variable:TYPE*min..max {props}]
+                let (var, edge_types, min_h, max_h, props) =
+                    if self.current.kind == TokenKind::LBracket {
                         self.advance();
-                        Some(name)
-                    } else {
-                        None
-                    };
 
-                    let mut tps = Vec::new();
-                    while self.current.kind == TokenKind::Colon {
-                        self.advance();
-                        if !self.is_label_or_type_name() {
-                            return Err(self.error("Expected edge type"));
+                        // Parse variable name if present
+                        // Variable is followed by : (type), * (quantifier), { (properties), or ] (end)
+                        let v = if self.is_identifier() {
+                            let peek = self.peek_kind();
+                            if matches!(
+                                peek,
+                                TokenKind::Colon
+                                    | TokenKind::Star
+                                    | TokenKind::LBrace
+                                    | TokenKind::RBracket
+                            ) {
+                                let name = self.get_identifier_name();
+                                self.advance();
+                                Some(name)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        };
+
+                        let mut tps = Vec::new();
+                        while self.current.kind == TokenKind::Colon {
+                            self.advance();
+                            if !self.is_label_or_type_name() {
+                                return Err(self.error("Expected edge type"));
+                            }
+                            tps.push(self.get_identifier_name());
+                            self.advance();
                         }
-                        tps.push(self.get_identifier_name());
-                        self.advance();
-                    }
 
-                    // Parse variable-length path quantifier: *min..max
-                    let (min_h, max_h) = self.parse_path_quantifier()?;
+                        // Parse variable-length path quantifier: *min..max
+                        let (min_h, max_h) = self.parse_path_quantifier()?;
 
-                    self.expect(TokenKind::RBracket)?;
-                    (v, tps, min_h, max_h)
-                } else {
-                    (None, Vec::new(), None, None)
-                };
+                        // Parse edge properties: {key: value, ...}
+                        let edge_props = if self.current.kind == TokenKind::LBrace {
+                            self.parse_property_map()?
+                        } else {
+                            Vec::new()
+                        };
+
+                        self.expect(TokenKind::RBracket)?;
+                        (v, tps, min_h, max_h, edge_props)
+                    } else {
+                        (None, Vec::new(), None, None, Vec::new())
+                    };
 
                 // Now determine direction from trailing symbol
                 let dir = if self.current.kind == TokenKind::Arrow {
@@ -566,55 +658,76 @@ impl<'a> Parser<'a> {
                     return Err(self.error("Expected -> or - after edge pattern"));
                 };
 
-                (var, edge_types, min_h, max_h, dir)
+                (var, edge_types, min_h, max_h, props, dir)
             } else if self.current.kind == TokenKind::LeftArrow {
                 // Pattern: <-[...]-(target)
                 self.advance();
 
-                let (var, edge_types, min_h, max_h) = if self.current.kind == TokenKind::LBracket {
-                    self.advance();
-
-                    let v = if self.is_identifier() && self.peek_kind() != TokenKind::Colon {
-                        let name = self.get_identifier_name();
+                let (var, edge_types, min_h, max_h, props) =
+                    if self.current.kind == TokenKind::LBracket {
                         self.advance();
-                        Some(name)
-                    } else {
-                        None
-                    };
 
-                    let mut tps = Vec::new();
-                    while self.current.kind == TokenKind::Colon {
-                        self.advance();
-                        if !self.is_label_or_type_name() {
-                            return Err(self.error("Expected edge type"));
+                        // Parse variable name if present
+                        // Variable is followed by : (type), * (quantifier), { (properties), or ] (end)
+                        let v = if self.is_identifier() {
+                            let peek = self.peek_kind();
+                            if matches!(
+                                peek,
+                                TokenKind::Colon
+                                    | TokenKind::Star
+                                    | TokenKind::LBrace
+                                    | TokenKind::RBracket
+                            ) {
+                                let name = self.get_identifier_name();
+                                self.advance();
+                                Some(name)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        };
+
+                        let mut tps = Vec::new();
+                        while self.current.kind == TokenKind::Colon {
+                            self.advance();
+                            if !self.is_label_or_type_name() {
+                                return Err(self.error("Expected edge type"));
+                            }
+                            tps.push(self.get_identifier_name());
+                            self.advance();
                         }
-                        tps.push(self.get_identifier_name());
-                        self.advance();
-                    }
 
-                    // Parse variable-length path quantifier
-                    let (min_h, max_h) = self.parse_path_quantifier()?;
+                        // Parse variable-length path quantifier
+                        let (min_h, max_h) = self.parse_path_quantifier()?;
 
-                    self.expect(TokenKind::RBracket)?;
-                    (v, tps, min_h, max_h)
-                } else {
-                    (None, Vec::new(), None, None)
-                };
+                        // Parse edge properties: {key: value, ...}
+                        let edge_props = if self.current.kind == TokenKind::LBrace {
+                            self.parse_property_map()?
+                        } else {
+                            Vec::new()
+                        };
+
+                        self.expect(TokenKind::RBracket)?;
+                        (v, tps, min_h, max_h, edge_props)
+                    } else {
+                        (None, Vec::new(), None, None, Vec::new())
+                    };
 
                 // Consume trailing -
                 if self.current.kind == TokenKind::Minus {
                     self.advance();
                 }
 
-                (var, edge_types, min_h, max_h, EdgeDirection::Incoming)
+                (var, edge_types, min_h, max_h, props, EdgeDirection::Incoming)
             } else if self.current.kind == TokenKind::Arrow {
                 // Simple ->
                 self.advance();
-                (None, Vec::new(), None, None, EdgeDirection::Outgoing)
+                (None, Vec::new(), None, None, Vec::new(), EdgeDirection::Outgoing)
             } else if self.current.kind == TokenKind::DoubleDash {
                 // Simple --
                 self.advance();
-                (None, Vec::new(), None, None, EdgeDirection::Undirected)
+                (None, Vec::new(), None, None, Vec::new(), EdgeDirection::Undirected)
             } else {
                 return Err(self.error("Expected edge pattern"));
             };
@@ -628,6 +741,7 @@ impl<'a> Parser<'a> {
             target,
             min_hops,
             max_hops,
+            properties,
             span: None,
         })
     }
@@ -962,8 +1076,32 @@ impl<'a> Parser<'a> {
                 self.advance();
                 Ok(Expression::Literal(Literal::String(value)))
             }
-            // CASE expression - must be checked BEFORE is_identifier() since CASE is a contextual keyword
-            TokenKind::Case => self.parse_case_expression(),
+            // CASE expression - check if it's actually a CASE expression or just a variable named 'case'
+            TokenKind::Case => {
+                // Look ahead: if followed by WHEN, it's a CASE expression
+                // If followed by : , ) AS ORDER LIMIT SKIP or EOF, it's a variable named 'case'
+                let next = self.peek_kind();
+                if matches!(
+                    next,
+                    TokenKind::Colon
+                        | TokenKind::Comma
+                        | TokenKind::RParen
+                        | TokenKind::RBracket
+                        | TokenKind::As
+                        | TokenKind::Order
+                        | TokenKind::Limit
+                        | TokenKind::Skip
+                        | TokenKind::Eof
+                ) {
+                    // It's a variable named 'case'
+                    let name = "case".to_string();
+                    self.advance();
+                    Ok(Expression::Variable(name))
+                } else {
+                    // It's a CASE expression
+                    self.parse_case_expression()
+                }
+            }
             // Handle type() function - must be checked BEFORE is_identifier() since TYPE is a contextual keyword
             TokenKind::Type => {
                 let name = "type".to_string();
@@ -1135,6 +1273,8 @@ impl<'a> Parser<'a> {
             with_clauses: vec![],
             unwind_clauses: vec![],
             merge_clauses: vec![],
+            create_clauses: vec![],
+            delete_clauses: vec![],
             return_clause: ReturnClause {
                 distinct: false,
                 items: vec![],
@@ -1189,6 +1329,76 @@ impl<'a> Parser<'a> {
 
         Ok(InsertStatement {
             patterns,
+            span: None,
+        })
+    }
+
+    /// Parses CREATE as INSERT (Cypher-style data modification).
+    fn parse_create_as_insert(&mut self) -> Result<InsertStatement> {
+        self.expect(TokenKind::Create)?;
+
+        let mut patterns = Vec::new();
+        patterns.push(self.parse_pattern()?);
+
+        while self.current.kind == TokenKind::Comma {
+            self.advance();
+            patterns.push(self.parse_pattern()?);
+        }
+
+        Ok(InsertStatement {
+            patterns,
+            span: None,
+        })
+    }
+
+    /// Parses CREATE clause within a query (e.g., MATCH ... CREATE ...).
+    fn parse_create_clause_in_query(&mut self) -> Result<InsertStatement> {
+        self.expect(TokenKind::Create)?;
+
+        let mut patterns = Vec::new();
+        patterns.push(self.parse_pattern()?);
+
+        while self.current.kind == TokenKind::Comma {
+            self.advance();
+            patterns.push(self.parse_pattern()?);
+        }
+
+        Ok(InsertStatement {
+            patterns,
+            span: None,
+        })
+    }
+
+    /// Parses DELETE clause within a query (e.g., MATCH ... DELETE ...).
+    fn parse_delete_clause_in_query(&mut self) -> Result<DeleteStatement> {
+        let detach = if self.current.kind == TokenKind::Detach {
+            self.advance();
+            true
+        } else {
+            false
+        };
+
+        self.expect(TokenKind::Delete)?;
+
+        let mut variables = Vec::new();
+        if !self.is_identifier() {
+            return Err(self.error("Expected variable name in DELETE"));
+        }
+        variables.push(self.get_identifier_name());
+        self.advance();
+
+        while self.current.kind == TokenKind::Comma {
+            self.advance();
+            if !self.is_identifier() {
+                return Err(self.error("Expected variable name in DELETE"));
+            }
+            variables.push(self.get_identifier_name());
+            self.advance();
+        }
+
+        Ok(DeleteStatement {
+            variables,
+            detach,
             span: None,
         })
     }
@@ -1327,7 +1537,11 @@ impl<'a> Parser<'a> {
     }
 
     fn advance(&mut self) {
-        self.current = self.lexer.next_token();
+        if let Some(peeked) = self.peeked.take() {
+            self.current = peeked;
+        } else {
+            self.current = self.lexer.next_token();
+        }
     }
 
     fn expect(&mut self, kind: TokenKind) -> Result<()> {
@@ -1340,9 +1554,10 @@ impl<'a> Parser<'a> {
     }
 
     fn peek_kind(&mut self) -> TokenKind {
-        // Simple lookahead by creating a temporary lexer
-        // In a production implementation, we'd buffer tokens
-        self.current.kind
+        if self.peeked.is_none() {
+            self.peeked = Some(self.lexer.next_token());
+        }
+        self.peeked.as_ref().unwrap().kind
     }
 
     fn error(&self, message: &str) -> Error {
@@ -1531,7 +1746,7 @@ mod tests {
         assert!(result.is_ok(), "Parse error: {:?}", result.err());
 
         if let Statement::Query(query) = result.unwrap() {
-            if let Pattern::Path(path) = &query.match_clauses[0].patterns[0] {
+            if let Pattern::Path(path) = &query.match_clauses[0].patterns[0].pattern {
                 let edge = &path.edges[0];
                 assert_eq!(edge.min_hops, Some(1));
                 assert_eq!(edge.max_hops, Some(3));
@@ -1550,7 +1765,7 @@ mod tests {
         assert!(result.is_ok());
 
         if let Statement::Query(query) = result.unwrap() {
-            if let Pattern::Path(path) = &query.match_clauses[0].patterns[0] {
+            if let Pattern::Path(path) = &query.match_clauses[0].patterns[0].pattern {
                 let edge = &path.edges[0];
                 assert_eq!(edge.min_hops, Some(1)); // default min is 1
                 assert_eq!(edge.max_hops, None); // unbounded max
@@ -1569,7 +1784,7 @@ mod tests {
         assert!(result.is_ok());
 
         if let Statement::Query(query) = result.unwrap() {
-            if let Pattern::Path(path) = &query.match_clauses[0].patterns[0] {
+            if let Pattern::Path(path) = &query.match_clauses[0].patterns[0].pattern {
                 let edge = &path.edges[0];
                 assert_eq!(edge.min_hops, Some(2));
                 assert_eq!(edge.max_hops, Some(2)); // exact means min == max
@@ -1590,7 +1805,7 @@ mod tests {
         assert!(result.is_ok(), "Parse error: {:?}", result.err());
 
         if let Statement::Query(query) = result.unwrap() {
-            if let Pattern::Path(path) = &query.match_clauses[0].patterns[0] {
+            if let Pattern::Path(path) = &query.match_clauses[0].patterns[0].pattern {
                 let edge = &path.edges[0];
                 assert_eq!(edge.min_hops, Some(1));
                 assert_eq!(edge.max_hops, Some(3));
@@ -1623,7 +1838,7 @@ mod tests {
             assert!(result.is_ok(), "Parse error for '{}': {:?}", expected_var, result.err());
 
             if let Statement::Query(q) = result.unwrap() {
-                if let Pattern::Node(node) = &q.match_clauses[0].patterns[0] {
+                if let Pattern::Node(node) = &q.match_clauses[0].patterns[0].pattern {
                     assert_eq!(node.variable, Some(expected_var.to_string()));
                 }
             }
@@ -1637,7 +1852,7 @@ mod tests {
         assert!(result.is_ok());
 
         if let Statement::Query(query) = result.unwrap() {
-            if let Pattern::Node(node) = &query.match_clauses[0].patterns[0] {
+            if let Pattern::Node(node) = &query.match_clauses[0].patterns[0].pattern {
                 assert_eq!(node.labels[0], "rdf:type");
             } else {
                 panic!("Expected node pattern");

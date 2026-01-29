@@ -28,6 +28,10 @@ pub struct QueryStatement {
     pub unwind_clauses: Vec<UnwindClause>,
     /// MERGE clauses for conditional create/match.
     pub merge_clauses: Vec<MergeClause>,
+    /// CREATE clauses (Cypher-style data modification within query).
+    pub create_clauses: Vec<InsertStatement>,
+    /// DELETE clauses (data removal within query).
+    pub delete_clauses: Vec<DeleteStatement>,
     /// Required RETURN clause.
     pub return_clause: ReturnClause,
     /// Source span in the original query.
@@ -59,10 +63,30 @@ pub struct LabelOperation {
 pub struct MatchClause {
     /// Whether this is an OPTIONAL MATCH.
     pub optional: bool,
-    /// Graph patterns to match.
-    pub patterns: Vec<Pattern>,
+    /// Graph patterns to match, potentially with aliases and path functions.
+    pub patterns: Vec<AliasedPattern>,
     /// Source span.
     pub span: Option<SourceSpan>,
+}
+
+/// A pattern with optional alias and path function wrapper.
+#[derive(Debug, Clone)]
+pub struct AliasedPattern {
+    /// Optional alias for the pattern (e.g., `p` in `p = (a)-[*]-(b)`).
+    pub alias: Option<String>,
+    /// Optional path function wrapping the pattern.
+    pub path_function: Option<PathFunction>,
+    /// The underlying pattern.
+    pub pattern: Pattern,
+}
+
+/// Path functions for shortest path queries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PathFunction {
+    /// Find the shortest path between two nodes.
+    ShortestPath,
+    /// Find all shortest paths between two nodes.
+    AllShortestPaths,
 }
 
 /// A WITH clause for query chaining.
@@ -150,6 +174,8 @@ pub struct EdgePattern {
     pub min_hops: Option<u32>,
     /// Variable-length path: maximum hops (None means unlimited or same as min).
     pub max_hops: Option<u32>,
+    /// Property filters for the edge.
+    pub properties: Vec<(String, Expression)>,
     /// Source span.
     pub span: Option<SourceSpan>,
 }

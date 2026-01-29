@@ -33,27 +33,14 @@ pub struct VariableLengthExpandOperator {
     tx_id: Option<TxId>,
     /// Epoch for version visibility.
     viewing_epoch: Option<EpochId>,
-    /// State for iterative expansion.
-    state: ExpandState,
-}
-
-/// State for variable-length expansion.
-enum ExpandState {
-    /// Not started yet - need to load input.
-    NotStarted,
-    /// Processing input rows.
-    Processing {
-        /// Materialized input rows for reuse.
-        input_rows: Vec<InputRow>,
-        /// Current input row being processed.
-        current_input_idx: usize,
-        /// BFS queue of (node_id, depth, path_to_node).
-        frontier: VecDeque<FrontierEntry>,
-        /// Output buffer.
-        output_buffer: Vec<OutputRow>,
-    },
-    /// All input exhausted.
-    Exhausted,
+    /// Materialized input rows.
+    input_rows: Option<Vec<InputRow>>,
+    /// Current input row index.
+    current_input_idx: usize,
+    /// Output buffer for pending results.
+    output_buffer: Vec<OutputRow>,
+    /// Whether the operator is exhausted.
+    exhausted: bool,
 }
 
 /// A materialized input row.
@@ -70,16 +57,6 @@ enum ColumnValue {
     NodeId(NodeId),
     EdgeId(EdgeId),
     Value(grafeo_common::types::Value),
-}
-
-/// Entry in the BFS frontier.
-struct FrontierEntry {
-    /// Current node in the traversal.
-    node_id: NodeId,
-    /// Depth from the source (number of hops).
-    depth: u32,
-    /// The edge that led to this node (for the last hop).
-    edge_id: EdgeId,
 }
 
 /// A ready output row.
@@ -114,7 +91,10 @@ impl VariableLengthExpandOperator {
             chunk_capacity: 2048,
             tx_id: None,
             viewing_epoch: None,
-            state: ExpandState::NotStarted,
+            input_rows: None,
+            current_input_idx: 0,
+            output_buffer: Vec::new(),
+            exhausted: false,
         }
     }
 
@@ -132,7 +112,7 @@ impl VariableLengthExpandOperator {
     }
 
     /// Materializes all input rows.
-    fn materialize_input(&mut self) -> Result<Vec<InputRow>, OperatorError> {
+    fn materialize_input(&mut self) -> Result<(), OperatorError> {
         let mut rows = Vec::new();
 
         while let Some(mut chunk) = self.input.next()? {
@@ -175,7 +155,8 @@ impl VariableLengthExpandOperator {
             }
         }
 
-        Ok(rows)
+        self.input_rows = Some(rows);
+        Ok(())
     }
 
     /// Gets edges from a node, respecting filters and visibility.
@@ -249,134 +230,107 @@ impl VariableLengthExpandOperator {
 
         results
     }
+
+    /// Fill the output buffer with results from the next input row.
+    fn fill_output_buffer(&mut self) {
+        let input_rows = match &self.input_rows {
+            Some(rows) => rows,
+            None => return,
+        };
+
+        while self.output_buffer.is_empty() && self.current_input_idx < input_rows.len() {
+            let source_node = input_rows[self.current_input_idx].source_node;
+            let results = self.process_input_row(self.current_input_idx, source_node);
+            self.output_buffer.extend(results);
+            self.current_input_idx += 1;
+        }
+    }
 }
 
 impl Operator for VariableLengthExpandOperator {
     fn next(&mut self) -> OperatorResult {
-        loop {
-            match &mut self.state {
-                ExpandState::NotStarted => {
-                    // Materialize input
-                    let input_rows = self.materialize_input()?;
-                    if input_rows.is_empty() {
-                        self.state = ExpandState::Exhausted;
-                        return Ok(None);
-                    }
-                    self.state = ExpandState::Processing {
-                        input_rows,
-                        current_input_idx: 0,
-                        frontier: VecDeque::new(),
-                        output_buffer: Vec::new(),
-                    };
-                }
-                ExpandState::Processing {
-                    input_rows,
-                    current_input_idx,
-                    frontier: _,
-                    output_buffer,
-                } => {
-                    // Fill output buffer if empty
-                    while output_buffer.is_empty() && *current_input_idx < input_rows.len() {
-                        let row = &input_rows[*current_input_idx];
-                        let results = self.process_input_row(*current_input_idx, row.source_node);
-                        output_buffer.extend(results);
-                        *current_input_idx += 1;
-                    }
+        if self.exhausted {
+            return Ok(None);
+        }
 
-                    if output_buffer.is_empty() {
-                        self.state = ExpandState::Exhausted;
-                        return Ok(None);
-                    }
-
-                    // Get reference to input_rows for building output
-                    let input_rows_ref = if let ExpandState::Processing { input_rows, .. } =
-                        &self.state
-                    {
-                        input_rows
-                    } else {
-                        unreachable!()
-                    };
-
-                    // Build output chunk from buffer
-                    let num_input_cols = input_rows_ref
-                        .first()
-                        .map_or(0, |r| r.columns.len());
-
-                    // Schema: [input_columns..., edge, target]
-                    let mut schema: Vec<LogicalType> = Vec::with_capacity(num_input_cols + 2);
-                    if let Some(first_row) = input_rows_ref.first() {
-                        for col_val in &first_row.columns {
-                            let ty = match col_val {
-                                ColumnValue::NodeId(_) => LogicalType::Node,
-                                ColumnValue::EdgeId(_) => LogicalType::Edge,
-                                ColumnValue::Value(_) => LogicalType::Any,
-                            };
-                            schema.push(ty);
-                        }
-                    }
-                    schema.push(LogicalType::Edge);
-                    schema.push(LogicalType::Node);
-
-                    let mut chunk = DataChunk::with_capacity(&schema, self.chunk_capacity);
-
-                    // Take up to chunk_capacity rows from buffer
-                    let output_buffer_ref = if let ExpandState::Processing { output_buffer, .. } =
-                        &mut self.state
-                    {
-                        output_buffer
-                    } else {
-                        unreachable!()
-                    };
-
-                    let input_rows_ref2 = if let ExpandState::Processing { input_rows, .. } =
-                        &self.state
-                    {
-                        input_rows
-                    } else {
-                        unreachable!()
-                    };
-
-                    let take_count = output_buffer_ref.len().min(self.chunk_capacity);
-                    let to_output: Vec<_> = output_buffer_ref.drain(..take_count).collect();
-
-                    for out_row in &to_output {
-                        let input_row = &input_rows_ref2[out_row.input_idx];
-
-                        // Copy input columns
-                        for (col_idx, col_val) in input_row.columns.iter().enumerate() {
-                            if let Some(out_col) = chunk.column_mut(col_idx) {
-                                match col_val {
-                                    ColumnValue::NodeId(id) => out_col.push_node_id(*id),
-                                    ColumnValue::EdgeId(id) => out_col.push_edge_id(*id),
-                                    ColumnValue::Value(v) => out_col.push_value(v.clone()),
-                                }
-                            }
-                        }
-
-                        // Add edge column
-                        if let Some(col) = chunk.column_mut(num_input_cols) {
-                            col.push_edge_id(out_row.edge_id);
-                        }
-
-                        // Add target node column
-                        if let Some(col) = chunk.column_mut(num_input_cols + 1) {
-                            col.push_node_id(out_row.target_id);
-                        }
-                    }
-
-                    chunk.set_count(to_output.len());
-                    return Ok(Some(chunk));
-                }
-                ExpandState::Exhausted => {
-                    return Ok(None);
-                }
+        // Materialize input on first call
+        if self.input_rows.is_none() {
+            self.materialize_input()?;
+            if self.input_rows.as_ref().map_or(true, Vec::is_empty) {
+                self.exhausted = true;
+                return Ok(None);
             }
         }
+
+        // Fill output buffer if empty
+        self.fill_output_buffer();
+
+        if self.output_buffer.is_empty() {
+            self.exhausted = true;
+            return Ok(None);
+        }
+
+        let input_rows = self.input_rows.as_ref().unwrap();
+
+        // Build output chunk from buffer
+        let num_input_cols = input_rows.first().map_or(0, |r| r.columns.len());
+
+        // Schema: [input_columns..., edge, target]
+        let mut schema: Vec<LogicalType> = Vec::with_capacity(num_input_cols + 2);
+        if let Some(first_row) = input_rows.first() {
+            for col_val in &first_row.columns {
+                let ty = match col_val {
+                    ColumnValue::NodeId(_) => LogicalType::Node,
+                    ColumnValue::EdgeId(_) => LogicalType::Edge,
+                    ColumnValue::Value(_) => LogicalType::Any,
+                };
+                schema.push(ty);
+            }
+        }
+        schema.push(LogicalType::Edge);
+        schema.push(LogicalType::Node);
+
+        let mut chunk = DataChunk::with_capacity(&schema, self.chunk_capacity);
+
+        // Take up to chunk_capacity rows from buffer
+        let take_count = self.output_buffer.len().min(self.chunk_capacity);
+        let to_output: Vec<_> = self.output_buffer.drain(..take_count).collect();
+
+        for out_row in &to_output {
+            let input_row = &input_rows[out_row.input_idx];
+
+            // Copy input columns
+            for (col_idx, col_val) in input_row.columns.iter().enumerate() {
+                if let Some(out_col) = chunk.column_mut(col_idx) {
+                    match col_val {
+                        ColumnValue::NodeId(id) => out_col.push_node_id(*id),
+                        ColumnValue::EdgeId(id) => out_col.push_edge_id(*id),
+                        ColumnValue::Value(v) => out_col.push_value(v.clone()),
+                    }
+                }
+            }
+
+            // Add edge column
+            if let Some(col) = chunk.column_mut(num_input_cols) {
+                col.push_edge_id(out_row.edge_id);
+            }
+
+            // Add target node column
+            if let Some(col) = chunk.column_mut(num_input_cols + 1) {
+                col.push_node_id(out_row.target_id);
+            }
+        }
+
+        chunk.set_count(to_output.len());
+        Ok(Some(chunk))
     }
 
     fn reset(&mut self) {
         self.input.reset();
-        self.state = ExpandState::NotStarted;
+        self.input_rows = None;
+        self.current_input_idx = 0;
+        self.output_buffer.clear();
+        self.exhausted = false;
     }
 
     fn name(&self) -> &'static str {
@@ -399,20 +353,19 @@ mod tests {
         let c = store.create_node(&["Node"]);
         let d = store.create_node(&["Node"]);
 
-        store.set_property(a, "name", "a".into());
-        store.set_property(b, "name", "b".into());
-        store.set_property(c, "name", "c".into());
-        store.set_property(d, "name", "d".into());
+        store.set_node_property(a, "name", "a".into());
+        store.set_node_property(b, "name", "b".into());
+        store.set_node_property(c, "name", "c".into());
+        store.set_node_property(d, "name", "d".into());
 
         store.create_edge(a, b, "NEXT");
         store.create_edge(b, c, "NEXT");
         store.create_edge(c, d, "NEXT");
 
-        // Create scan for node 'a' only
+        // Create scan for all nodes
         let scan = Box::new(ScanOperator::with_label(Arc::clone(&store), "Node"));
 
-        // Expand 1-3 hops from all nodes - but we want just from 'a'
-        // For this test, we'll expand from all nodes and check the results
+        // Expand 1-3 hops from all nodes
         let mut expand = VariableLengthExpandOperator::new(
             Arc::clone(&store),
             scan,
@@ -433,11 +386,11 @@ mod tests {
         }
 
         // From 'a', we should reach b (1 hop), c (2 hops), d (3 hops)
-        // From 'b', we should reach c (1 hop), d (2 hops)
-        // From 'c', we should reach d (1 hop)
-        // From 'd', we should reach nothing
-
-        let a_targets: Vec<NodeId> = results.iter().filter(|(s, _)| *s == a).map(|(_, t)| *t).collect();
+        let a_targets: Vec<NodeId> = results
+            .iter()
+            .filter(|(s, _)| *s == a)
+            .map(|(_, t)| *t)
+            .collect();
         assert!(a_targets.contains(&b), "a should reach b");
         assert!(a_targets.contains(&c), "a should reach c");
         assert!(a_targets.contains(&d), "a should reach d");
@@ -479,8 +432,15 @@ mod tests {
         }
 
         // From 'a', we should reach c (2 hops) but NOT b (1 hop)
-        let a_targets: Vec<NodeId> = results.iter().filter(|(s, _)| *s == a).map(|(_, t)| *t).collect();
-        assert!(!a_targets.contains(&b), "a should NOT reach b with min_hops=2");
+        let a_targets: Vec<NodeId> = results
+            .iter()
+            .filter(|(s, _)| *s == a)
+            .map(|(_, t)| *t)
+            .collect();
+        assert!(
+            !a_targets.contains(&b),
+            "a should NOT reach b with min_hops=2"
+        );
         assert!(a_targets.contains(&c), "a should reach c");
     }
 }

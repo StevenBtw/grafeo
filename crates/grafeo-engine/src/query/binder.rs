@@ -370,6 +370,34 @@ impl Binder {
                 }
                 Ok(())
             }
+            LogicalOperator::ShortestPath(sp) => {
+                // First bind the input
+                self.bind_operator(&sp.input)?;
+                // Validate that source and target variables are defined
+                if !self.context.contains(&sp.source_var) {
+                    return Err(binding_error(format!(
+                        "Undefined source variable '{}' in shortestPath",
+                        sp.source_var
+                    )));
+                }
+                if !self.context.contains(&sp.target_var) {
+                    return Err(binding_error(format!(
+                        "Undefined target variable '{}' in shortestPath",
+                        sp.target_var
+                    )));
+                }
+                // Add the path alias variable to the context
+                self.context.add_variable(
+                    sp.path_alias.clone(),
+                    VariableInfo {
+                        name: sp.path_alias.clone(),
+                        data_type: LogicalType::Any, // Path is a complex type
+                        is_node: false,
+                        is_edge: false,
+                    },
+                );
+                Ok(())
+            }
         }
     }
 

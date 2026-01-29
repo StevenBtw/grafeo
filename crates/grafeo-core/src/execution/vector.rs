@@ -277,10 +277,14 @@ impl ValueVector {
         if self.is_null(index) {
             return None;
         }
-        if let VectorData::NodeId(vec) = &self.data {
-            vec.get(index).copied()
-        } else {
-            None
+        match &self.data {
+            VectorData::NodeId(vec) => vec.get(index).copied(),
+            // Handle Generic vectors that contain node IDs stored as Int64
+            VectorData::Generic(vec) => match vec.get(index) {
+                Some(Value::Int64(i)) => Some(NodeId::new(*i as u64)),
+                _ => None,
+            },
+            _ => None,
         }
     }
 
@@ -290,10 +294,14 @@ impl ValueVector {
         if self.is_null(index) {
             return None;
         }
-        if let VectorData::EdgeId(vec) = &self.data {
-            vec.get(index).copied()
-        } else {
-            None
+        match &self.data {
+            VectorData::EdgeId(vec) => vec.get(index).copied(),
+            // Handle Generic vectors that contain edge IDs stored as Int64
+            VectorData::Generic(vec) => match vec.get(index) {
+                Some(Value::Int64(i)) => Some(EdgeId::new(*i as u64)),
+                _ => None,
+            },
+            _ => None,
         }
     }
 
