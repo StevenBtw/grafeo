@@ -1,5 +1,3 @@
-# Grafeo
-
 [![CI](https://github.com/GrafeoDB/grafeo/actions/workflows/ci.yml/badge.svg)](https://github.com/GrafeoDB/grafeo/actions/workflows/ci.yml)
 [![Docs](https://github.com/GrafeoDB/grafeo/actions/workflows/docs.yml/badge.svg)](https://github.com/GrafeoDB/grafeo/actions/workflows/docs.yml)
 [![codecov](https://codecov.io/gh/GrafeoDB/grafeo/graph/badge.svg)](https://codecov.io/gh/GrafeoDB/grafeo)
@@ -10,7 +8,9 @@
 [![MSRV](https://img.shields.io/badge/MSRV-1.91.1-blue)](https://www.rust-lang.org)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org)
 
-A pure-Rust, high-performance, embeddable graph database supporting both **Labeled Property Graph (LPG)** and **Resource Description Framework (RDF)** graph data models.
+# Grafeo
+
+Grafeo is a pure-Rust, high-performance graph database that can be embedded as a library or run as a standalone database, with optional in-memory or persistent storage. Grafeo supports both **Labeled Property Graph (LPG)** and **Resource Description Framework (RDF)** graph data models and all major query languages. 
 
 ## Features
 
@@ -25,11 +25,11 @@ A pure-Rust, high-performance, embeddable graph database supporting both **Label
 
 ### Query Languages
 
-- **GQL** (ISO/IEC 39075) - enabled by default
-- **Cypher** (openCypher 9.0) - enabled by default
-- **Gremlin** (Apache TinkerPop) - enabled by default
-- **GraphQL** - enabled by default, supports both LPG and RDF
-- **SPARQL** (W3C 1.1) - enabled by default for RDF queries
+- **GQL** (ISO/IEC 39075)
+- **Cypher** (openCypher 9.0)
+- **Gremlin** (Apache TinkerPop)
+- **GraphQL**
+- **SPARQL** (W3C 1.1)
 
 ### Performance Features
 
