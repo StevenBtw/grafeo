@@ -70,6 +70,10 @@ if [[ -d ".venv" ]]; then
         echo -e "${YELLOW}Installing numpy...${NC}"
         uv pip install numpy 2>/dev/null || pip install numpy
     }
+    $PYTHON_CMD -c "import scipy" 2>/dev/null || {
+        echo -e "${YELLOW}Installing scipy...${NC}"
+        uv pip install scipy 2>/dev/null || pip install scipy
+    }
     $PYTHON_CMD -c "import networkx" 2>/dev/null || {
         echo -e "${YELLOW}Installing networkx...${NC}"
         uv pip install networkx 2>/dev/null || pip install networkx

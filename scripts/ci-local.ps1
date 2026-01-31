@@ -82,6 +82,11 @@ if (Test-Path ".venv") {
         Write-Host "Installing numpy..." -ForegroundColor Yellow
         & uv pip install numpy 2>$null
     }
+    & $pythonCmd -c "import scipy" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Installing scipy..." -ForegroundColor Yellow
+        & uv pip install scipy 2>$null
+    }
     & $pythonCmd -c "import networkx" 2>$null
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Installing networkx..." -ForegroundColor Yellow
