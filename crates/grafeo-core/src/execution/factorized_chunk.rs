@@ -1157,7 +1157,7 @@ impl From<FactorizedChunk> for ChunkVariant {
 
 #[cfg(test)]
 mod tests {
-    use grafeo_common::types::{LogicalType, NodeId};
+    use grafeo_common::types::{LogicalType, NodeId, Value};
 
     use super::*;
 
@@ -1166,6 +1166,25 @@ mod tests {
         col.push_int64(1);
         col.push_int64(2);
         DataChunk::new(vec![col])
+    }
+
+    fn create_multi_level_chunk() -> FactorizedChunk {
+        // 2 sources, each with 2 neighbors = 4 logical rows
+        let mut sources = ValueVector::with_type(LogicalType::Int64);
+        sources.push_int64(10);
+        sources.push_int64(20);
+
+        let mut chunk = FactorizedChunk::with_flat_level(vec![sources], vec!["src".to_string()]);
+
+        let mut neighbors = ValueVector::with_type(LogicalType::Int64);
+        neighbors.push_int64(1);
+        neighbors.push_int64(2);
+        neighbors.push_int64(3);
+        neighbors.push_int64(4);
+
+        let offsets = vec![0, 2, 4];
+        chunk.add_level(vec![neighbors], vec!["nbr".to_string()], &offsets);
+        chunk
     }
 
     #[test]
@@ -1276,6 +1295,41 @@ mod tests {
     }
 
     #[test]
+    fn test_chunk_variant_factorized() {
+        let chunk = create_multi_level_chunk();
+        let variant = ChunkVariant::factorized(chunk);
+
+        assert!(variant.is_factorized());
+        assert!(!variant.is_flat());
+        assert_eq!(variant.logical_row_count(), 4);
+
+        let flat = variant.ensure_flat();
+        assert_eq!(flat.row_count(), 4);
+    }
+
+    #[test]
+    fn test_chunk_variant_from() {
+        let flat = make_flat_chunk();
+        let variant: ChunkVariant = flat.into();
+        assert!(variant.is_flat());
+
+        let factorized = create_multi_level_chunk();
+        let variant2: ChunkVariant = factorized.into();
+        assert!(variant2.is_factorized());
+    }
+
+    #[test]
+    fn test_chunk_variant_is_empty() {
+        let empty_flat = DataChunk::empty();
+        let variant = ChunkVariant::flat(empty_flat);
+        assert!(variant.is_empty());
+
+        let non_empty = make_flat_chunk();
+        let variant2 = ChunkVariant::flat(non_empty);
+        assert!(!variant2.is_empty());
+    }
+
+    #[test]
     fn test_empty_chunk() {
         let chunk = FactorizedChunk::empty();
         assert_eq!(chunk.level_count(), 0);
@@ -1300,5 +1354,496 @@ mod tests {
 
         let names = chunk.all_column_names();
         assert_eq!(names, vec!["source", "neighbor"]);
+    }
+
+    #[test]
+    fn test_level_mut() {
+        let mut chunk = create_multi_level_chunk();
+
+        // Access level mutably
+        let level = chunk.level_mut(0).unwrap();
+        assert_eq!(level.column_count(), 1);
+
+        // Invalid level should return None
+        assert!(chunk.level_mut(10).is_none());
+    }
+
+    #[test]
+    fn test_factorization_level_column_mut() {
+        let mut chunk = create_multi_level_chunk();
+
+        let level = chunk.level_mut(0).unwrap();
+        let col = level.column_mut(0);
+        assert!(col.is_some());
+
+        // Invalid column should return None
+        assert!(level.column_mut(10).is_none());
+    }
+
+    #[test]
+    fn test_factorization_level_physical_value_count() {
+        let chunk = create_multi_level_chunk();
+
+        let level0 = chunk.level(0).unwrap();
+        assert_eq!(level0.physical_value_count(), 2); // 2 sources
+
+        let level1 = chunk.level(1).unwrap();
+        assert_eq!(level1.physical_value_count(), 4); // 4 neighbors
+    }
+
+    #[test]
+    fn test_count_rows() {
+        let chunk = create_multi_level_chunk();
+        assert_eq!(chunk.count_rows(), 4);
+
+        let empty = FactorizedChunk::empty();
+        assert_eq!(empty.count_rows(), 0);
+    }
+
+    #[test]
+    fn test_compute_path_multiplicities() {
+        let chunk = create_multi_level_chunk();
+
+        let mults = chunk.compute_path_multiplicities();
+        // Each value at the deepest level has multiplicity 1 since each parent has 2 children
+        assert_eq!(mults.len(), 4);
+        assert!(mults.iter().all(|&m| m == 1));
+    }
+
+    #[test]
+    fn test_compute_path_multiplicities_single_level() {
+        let mut col = ValueVector::with_type(LogicalType::Int64);
+        col.push_int64(1);
+        col.push_int64(2);
+        col.push_int64(3);
+
+        let chunk = FactorizedChunk::with_flat_level(vec![col], vec!["val".to_string()]);
+        let mults = chunk.compute_path_multiplicities();
+
+        // Single level: each value has multiplicity 1
+        assert_eq!(mults.len(), 3);
+        assert!(mults.iter().all(|&m| m == 1));
+    }
+
+    #[test]
+    fn test_compute_path_multiplicities_empty() {
+        let chunk = FactorizedChunk::empty();
+        let mults = chunk.compute_path_multiplicities();
+        assert!(mults.is_empty());
+    }
+
+    #[test]
+    fn test_path_multiplicities_cached() {
+        let mut chunk = create_multi_level_chunk();
+
+        // First call computes and caches
+        let mults1 = chunk.path_multiplicities_cached();
+        assert_eq!(mults1.len(), 4);
+
+        // Second call should return cached value
+        let mults2 = chunk.path_multiplicities_cached();
+        assert_eq!(mults1.len(), mults2.len());
+    }
+
+    #[test]
+    fn test_sum_deepest() {
+        let chunk = create_multi_level_chunk();
+
+        // Deepest level has values [1, 2, 3, 4]
+        let sum = chunk.sum_deepest(0);
+        assert_eq!(sum, Some(10.0)); // 1 + 2 + 3 + 4
+    }
+
+    #[test]
+    fn test_sum_deepest_empty() {
+        let chunk = FactorizedChunk::empty();
+        assert!(chunk.sum_deepest(0).is_none());
+    }
+
+    #[test]
+    fn test_sum_deepest_invalid_column() {
+        let chunk = create_multi_level_chunk();
+        assert!(chunk.sum_deepest(10).is_none());
+    }
+
+    #[test]
+    fn test_avg_deepest() {
+        let chunk = create_multi_level_chunk();
+
+        // Deepest level has values [1, 2, 3, 4], avg = 2.5
+        let avg = chunk.avg_deepest(0);
+        assert_eq!(avg, Some(2.5));
+    }
+
+    #[test]
+    fn test_avg_deepest_empty() {
+        let chunk = FactorizedChunk::empty();
+        assert!(chunk.avg_deepest(0).is_none());
+    }
+
+    #[test]
+    fn test_min_deepest() {
+        let chunk = create_multi_level_chunk();
+
+        let min = chunk.min_deepest(0);
+        assert_eq!(min, Some(Value::Int64(1)));
+    }
+
+    #[test]
+    fn test_min_deepest_empty() {
+        let chunk = FactorizedChunk::empty();
+        assert!(chunk.min_deepest(0).is_none());
+    }
+
+    #[test]
+    fn test_min_deepest_invalid_column() {
+        let chunk = create_multi_level_chunk();
+        assert!(chunk.min_deepest(10).is_none());
+    }
+
+    #[test]
+    fn test_max_deepest() {
+        let chunk = create_multi_level_chunk();
+
+        let max = chunk.max_deepest(0);
+        assert_eq!(max, Some(Value::Int64(4)));
+    }
+
+    #[test]
+    fn test_max_deepest_empty() {
+        let chunk = FactorizedChunk::empty();
+        assert!(chunk.max_deepest(0).is_none());
+    }
+
+    #[test]
+    fn test_value_less_than() {
+        // Null handling
+        assert!(FactorizedChunk::value_less_than(
+            &Value::Null,
+            &Value::Int64(1)
+        ));
+        assert!(!FactorizedChunk::value_less_than(
+            &Value::Int64(1),
+            &Value::Null
+        ));
+        assert!(!FactorizedChunk::value_less_than(
+            &Value::Null,
+            &Value::Null
+        ));
+
+        // Int64
+        assert!(FactorizedChunk::value_less_than(
+            &Value::Int64(1),
+            &Value::Int64(2)
+        ));
+        assert!(!FactorizedChunk::value_less_than(
+            &Value::Int64(2),
+            &Value::Int64(1)
+        ));
+
+        // Float64
+        assert!(FactorizedChunk::value_less_than(
+            &Value::Float64(1.5),
+            &Value::Float64(2.5)
+        ));
+
+        // Mixed Int/Float
+        assert!(FactorizedChunk::value_less_than(
+            &Value::Int64(1),
+            &Value::Float64(1.5)
+        ));
+        assert!(FactorizedChunk::value_less_than(
+            &Value::Float64(0.5),
+            &Value::Int64(1)
+        ));
+
+        // String
+        assert!(FactorizedChunk::value_less_than(
+            &Value::String("apple".into()),
+            &Value::String("banana".into())
+        ));
+
+        // Bool (false < true)
+        assert!(FactorizedChunk::value_less_than(
+            &Value::Bool(false),
+            &Value::Bool(true)
+        ));
+        assert!(!FactorizedChunk::value_less_than(
+            &Value::Bool(true),
+            &Value::Bool(false)
+        ));
+
+        // Incompatible types return false
+        assert!(!FactorizedChunk::value_less_than(
+            &Value::Int64(1),
+            &Value::String("hello".into())
+        ));
+    }
+
+    #[test]
+    fn test_filter_deepest() {
+        let chunk = create_multi_level_chunk();
+
+        // Filter to keep only values > 2
+        let filtered = chunk.filter_deepest(0, |v| {
+            if let Value::Int64(n) = v {
+                *n > 2
+            } else {
+                false
+            }
+        });
+
+        let filtered = filtered.unwrap();
+        assert_eq!(filtered.logical_row_count(), 2); // Only 3 and 4 remain
+    }
+
+    #[test]
+    fn test_filter_deepest_empty() {
+        let chunk = FactorizedChunk::empty();
+        assert!(chunk.filter_deepest(0, |_| true).is_none());
+    }
+
+    #[test]
+    fn test_filter_deepest_all_filtered() {
+        let chunk = create_multi_level_chunk();
+
+        // Filter everything out
+        let filtered = chunk.filter_deepest(0, |_| false);
+
+        let filtered = filtered.unwrap();
+        assert_eq!(filtered.logical_row_count(), 0);
+    }
+
+    #[test]
+    fn test_filter_deepest_invalid_column() {
+        let chunk = create_multi_level_chunk();
+        assert!(chunk.filter_deepest(10, |_| true).is_none());
+    }
+
+    #[test]
+    fn test_filter_deepest_multi() {
+        // Create a chunk with 2 columns at the deepest level
+        let mut sources = ValueVector::with_type(LogicalType::Int64);
+        sources.push_int64(1);
+
+        let mut chunk = FactorizedChunk::with_flat_level(vec![sources], vec!["src".to_string()]);
+
+        let mut col1 = ValueVector::with_type(LogicalType::Int64);
+        col1.push_int64(10);
+        col1.push_int64(20);
+        col1.push_int64(30);
+
+        let mut col2 = ValueVector::with_type(LogicalType::Int64);
+        col2.push_int64(1);
+        col2.push_int64(2);
+        col2.push_int64(3);
+
+        let offsets = vec![0, 3];
+        chunk.add_level(
+            vec![col1, col2],
+            vec!["a".to_string(), "b".to_string()],
+            &offsets,
+        );
+
+        // Filter based on both columns
+        let filtered = chunk.filter_deepest_multi(|values| {
+            if values.len() == 2 {
+                if let (Value::Int64(a), Value::Int64(b)) = (&values[0], &values[1]) {
+                    return *a + *b > 15;
+                }
+            }
+            false
+        });
+
+        assert!(filtered.is_some());
+        let filtered = filtered.unwrap();
+        assert_eq!(filtered.logical_row_count(), 2); // (20,2) and (30,3) pass
+    }
+
+    #[test]
+    fn test_filter_deepest_multi_empty() {
+        let chunk = FactorizedChunk::empty();
+        assert!(chunk.filter_deepest_multi(|_| true).is_none());
+    }
+
+    #[test]
+    fn test_filter_deepest_multi_no_columns() {
+        // Create a chunk with no columns at level 1
+        let mut sources = ValueVector::with_type(LogicalType::Int64);
+        sources.push_int64(1);
+
+        let mut chunk = FactorizedChunk::with_flat_level(vec![sources], vec!["src".to_string()]);
+
+        // Add empty level (edge case)
+        let empty_level = FactorizationLevel::unflat(vec![], vec![], vec![0]);
+        chunk.add_factorized_level(empty_level);
+
+        assert!(chunk.filter_deepest_multi(|_| true).is_none());
+    }
+
+    #[test]
+    fn test_project() {
+        let mut sources = ValueVector::with_type(LogicalType::Int64);
+        sources.push_int64(1);
+        sources.push_int64(2);
+
+        let mut col2 = ValueVector::with_type(LogicalType::String);
+        col2.push_string("a");
+        col2.push_string("b");
+
+        let chunk = FactorizedChunk::with_flat_level(
+            vec![sources, col2],
+            vec!["num".to_string(), "str".to_string()],
+        );
+
+        // Project only the first column
+        let projected = chunk.project(&[(0, 0, "projected_num".to_string())]);
+
+        assert_eq!(projected.total_column_count(), 1);
+        let names = projected.all_column_names();
+        assert_eq!(names, vec!["projected_num"]);
+    }
+
+    #[test]
+    fn test_project_empty() {
+        let chunk = FactorizedChunk::empty();
+        let projected = chunk.project(&[(0, 0, "col".to_string())]);
+        assert_eq!(projected.level_count(), 0);
+    }
+
+    #[test]
+    fn test_project_empty_specs() {
+        let chunk = create_multi_level_chunk();
+        let projected = chunk.project(&[]);
+        assert_eq!(projected.level_count(), 0);
+    }
+
+    #[test]
+    fn test_project_invalid_level() {
+        let chunk = create_multi_level_chunk();
+
+        // Project from invalid level
+        let projected = chunk.project(&[(10, 0, "col".to_string())]);
+        assert_eq!(projected.level_count(), 0);
+    }
+
+    #[test]
+    fn test_project_multi_level() {
+        let chunk = create_multi_level_chunk();
+
+        // Project from both levels
+        let projected =
+            chunk.project(&[(0, 0, "source".to_string()), (1, 0, "neighbor".to_string())]);
+
+        assert_eq!(projected.level_count(), 2);
+        assert_eq!(projected.total_column_count(), 2);
+    }
+
+    #[test]
+    fn test_total_column_count() {
+        let chunk = create_multi_level_chunk();
+        assert_eq!(chunk.total_column_count(), 2); // 1 at level 0, 1 at level 1
+    }
+
+    #[test]
+    fn test_chunk_state_access() {
+        let mut chunk = create_multi_level_chunk();
+
+        let state = chunk.chunk_state();
+        assert!(state.is_factorized());
+
+        let state_mut = chunk.chunk_state_mut();
+        state_mut.invalidate_cache();
+    }
+
+    #[test]
+    fn test_logical_row_iter_multi_level() {
+        let chunk = create_multi_level_chunk();
+
+        let indices: Vec<_> = chunk.logical_row_iter().collect();
+        assert_eq!(indices.len(), 4);
+
+        // Verify structure: [source_idx, neighbor_idx]
+        assert_eq!(indices[0], vec![0, 0]);
+        assert_eq!(indices[1], vec![0, 1]);
+        assert_eq!(indices[2], vec![1, 2]);
+        assert_eq!(indices[3], vec![1, 3]);
+    }
+
+    #[test]
+    fn test_sum_deepest_with_float() {
+        let mut sources = ValueVector::with_type(LogicalType::Int64);
+        sources.push_int64(1);
+
+        let mut chunk = FactorizedChunk::with_flat_level(vec![sources], vec!["src".to_string()]);
+
+        let mut floats = ValueVector::with_type(LogicalType::Float64);
+        floats.push_float64(1.5);
+        floats.push_float64(2.5);
+        floats.push_float64(3.0);
+
+        chunk.add_level(vec![floats], vec!["val".to_string()], &[0, 3]);
+
+        let sum = chunk.sum_deepest(0);
+        assert_eq!(sum, Some(7.0)); // 1.5 + 2.5 + 3.0
+    }
+
+    #[test]
+    fn test_min_max_with_strings() {
+        let mut sources = ValueVector::with_type(LogicalType::Int64);
+        sources.push_int64(1);
+
+        let mut chunk = FactorizedChunk::with_flat_level(vec![sources], vec!["src".to_string()]);
+
+        let mut strings = ValueVector::with_type(LogicalType::String);
+        strings.push_string("banana");
+        strings.push_string("apple");
+        strings.push_string("cherry");
+
+        chunk.add_level(vec![strings], vec!["fruit".to_string()], &[0, 3]);
+
+        let min = chunk.min_deepest(0);
+        assert_eq!(min, Some(Value::String("apple".into())));
+
+        let max = chunk.max_deepest(0);
+        assert_eq!(max, Some(Value::String("cherry".into())));
+    }
+
+    #[test]
+    fn test_recompute_logical_row_count_empty() {
+        let mut chunk = FactorizedChunk::empty();
+        chunk.recompute_logical_row_count();
+        assert_eq!(chunk.logical_row_count(), 0);
+    }
+
+    #[test]
+    fn test_factorization_level_group_count() {
+        let chunk = create_multi_level_chunk();
+
+        let level0 = chunk.level(0).unwrap();
+        assert_eq!(level0.group_count(), 2);
+
+        let level1 = chunk.level(1).unwrap();
+        assert_eq!(level1.group_count(), 4);
+    }
+
+    #[test]
+    fn test_factorization_level_multiplicities() {
+        let chunk = create_multi_level_chunk();
+
+        let level1 = chunk.level(1).unwrap();
+        let mults = level1.multiplicities();
+        assert_eq!(mults, &[2, 2]); // Each source has 2 neighbors
+    }
+
+    #[test]
+    fn test_factorization_level_column_names() {
+        let chunk = create_multi_level_chunk();
+
+        let level0 = chunk.level(0).unwrap();
+        assert_eq!(level0.column_names(), &["src"]);
+
+        let level1 = chunk.level(1).unwrap();
+        assert_eq!(level1.column_names(), &["nbr"]);
     }
 }

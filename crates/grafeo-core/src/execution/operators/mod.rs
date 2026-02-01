@@ -224,3 +224,141 @@ pub trait Operator: Send + Sync {
     /// Returns a name for debugging/explain output.
     fn name(&self) -> &'static str;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::execution::vector::ValueVector;
+    use grafeo_common::types::LogicalType;
+
+    fn create_test_chunk() -> DataChunk {
+        let mut col = ValueVector::with_type(LogicalType::Int64);
+        col.push_int64(1);
+        col.push_int64(2);
+        col.push_int64(3);
+        DataChunk::new(vec![col])
+    }
+
+    #[test]
+    fn test_flat_data_wrapper_new() {
+        let chunk = create_test_chunk();
+        let wrapper = FlatDataWrapper::new(chunk);
+
+        assert!(!wrapper.is_factorized());
+        assert_eq!(wrapper.logical_row_count(), 3);
+    }
+
+    #[test]
+    fn test_flat_data_wrapper_into_inner() {
+        let chunk = create_test_chunk();
+        let wrapper = FlatDataWrapper::new(chunk);
+
+        let inner = wrapper.into_inner();
+        assert_eq!(inner.row_count(), 3);
+    }
+
+    #[test]
+    fn test_flat_data_wrapper_chunk_state() {
+        let chunk = create_test_chunk();
+        let wrapper = FlatDataWrapper::new(chunk);
+
+        let state = wrapper.chunk_state();
+        assert!(state.is_flat());
+        assert_eq!(state.logical_row_count(), 3);
+    }
+
+    #[test]
+    fn test_flat_data_wrapper_physical_size() {
+        let mut col1 = ValueVector::with_type(LogicalType::Int64);
+        col1.push_int64(1);
+        col1.push_int64(2);
+
+        let mut col2 = ValueVector::with_type(LogicalType::String);
+        col2.push_string("a");
+        col2.push_string("b");
+
+        let chunk = DataChunk::new(vec![col1, col2]);
+        let wrapper = FlatDataWrapper::new(chunk);
+
+        // 2 rows * 2 columns = 4
+        assert_eq!(wrapper.physical_size(), 4);
+    }
+
+    #[test]
+    fn test_flat_data_wrapper_flatten() {
+        let chunk = create_test_chunk();
+        let wrapper = FlatDataWrapper::new(chunk);
+
+        let flattened = wrapper.flatten();
+        assert_eq!(flattened.row_count(), 3);
+        assert_eq!(flattened.column(0).unwrap().get_int64(0), Some(1));
+    }
+
+    #[test]
+    fn test_flat_data_wrapper_as_factorized() {
+        let chunk = create_test_chunk();
+        let wrapper = FlatDataWrapper::new(chunk);
+
+        assert!(wrapper.as_factorized().is_none());
+    }
+
+    #[test]
+    fn test_flat_data_wrapper_as_flat() {
+        let chunk = create_test_chunk();
+        let wrapper = FlatDataWrapper::new(chunk);
+
+        let flat = wrapper.as_flat();
+        assert!(flat.is_some());
+        assert_eq!(flat.unwrap().row_count(), 3);
+    }
+
+    #[test]
+    fn test_operator_error_type_mismatch() {
+        let err = OperatorError::TypeMismatch {
+            expected: "Int64".to_string(),
+            found: "String".to_string(),
+        };
+
+        let msg = format!("{err}");
+        assert!(msg.contains("type mismatch"));
+        assert!(msg.contains("Int64"));
+        assert!(msg.contains("String"));
+    }
+
+    #[test]
+    fn test_operator_error_column_not_found() {
+        let err = OperatorError::ColumnNotFound("missing_col".to_string());
+
+        let msg = format!("{err}");
+        assert!(msg.contains("column not found"));
+        assert!(msg.contains("missing_col"));
+    }
+
+    #[test]
+    fn test_operator_error_execution() {
+        let err = OperatorError::Execution("something went wrong".to_string());
+
+        let msg = format!("{err}");
+        assert!(msg.contains("execution error"));
+        assert!(msg.contains("something went wrong"));
+    }
+
+    #[test]
+    fn test_operator_error_debug() {
+        let err = OperatorError::TypeMismatch {
+            expected: "Int64".to_string(),
+            found: "String".to_string(),
+        };
+
+        let debug = format!("{err:?}");
+        assert!(debug.contains("TypeMismatch"));
+    }
+
+    #[test]
+    fn test_operator_error_clone() {
+        let err1 = OperatorError::ColumnNotFound("col".to_string());
+        let err2 = err1.clone();
+
+        assert_eq!(format!("{err1}"), format!("{err2}"));
+    }
+}

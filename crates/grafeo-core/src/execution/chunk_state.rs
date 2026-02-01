@@ -528,12 +528,77 @@ mod tests {
     }
 
     #[test]
+    fn test_level_selection_filter_sparse() {
+        // Start with sparse selection
+        let sel = LevelSelection::from_predicate(10, |i| i < 5);
+        assert_eq!(sel.selected_count(), 5);
+
+        // Filter the sparse selection further
+        let filtered = sel.filter(|i| i % 2 == 0);
+        // Only 0, 2, 4 pass both filters
+        assert_eq!(filtered.selected_count(), 3);
+        assert!(filtered.is_selected(0));
+        assert!(!filtered.is_selected(1));
+        assert!(filtered.is_selected(2));
+    }
+
+    #[test]
+    fn test_level_selection_iter_all() {
+        let sel = LevelSelection::all(5);
+        let indices: Vec<usize> = sel.iter().collect();
+        assert_eq!(indices, vec![0, 1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn test_level_selection_iter_sparse() {
+        let sel = LevelSelection::from_predicate(10, |i| i % 3 == 0);
+        let indices: Vec<usize> = sel.iter().collect();
+        assert_eq!(indices, vec![0, 3, 6, 9]);
+    }
+
+    #[test]
+    fn test_level_selection_from_predicate_all_selected() {
+        // When predicate selects everything, should return All variant
+        let sel = LevelSelection::from_predicate(5, |_| true);
+        assert_eq!(sel.selected_count(), 5);
+        match sel {
+            LevelSelection::All { count } => assert_eq!(count, 5),
+            LevelSelection::Sparse(_) => panic!("Expected All variant"),
+        }
+    }
+
+    #[test]
+    fn test_level_selection_from_predicate_partial() {
+        // When predicate selects some, should return Sparse variant
+        let sel = LevelSelection::from_predicate(10, |i| i < 3);
+        assert_eq!(sel.selected_count(), 3);
+        match sel {
+            LevelSelection::Sparse(_) => {}
+            LevelSelection::All { .. } => panic!("Expected Sparse variant"),
+        }
+    }
+
+    #[test]
     fn test_factorized_selection_all() {
         let sel = FactorizedSelection::all(&[10, 100, 1000]);
         assert_eq!(sel.level_count(), 3);
         assert!(sel.is_selected(0, 5));
         assert!(sel.is_selected(1, 50));
         assert!(sel.is_selected(2, 500));
+    }
+
+    #[test]
+    fn test_factorized_selection_new() {
+        let level_sels = vec![
+            LevelSelection::all(5),
+            LevelSelection::from_predicate(10, |i| i < 3),
+        ];
+        let sel = FactorizedSelection::new(level_sels);
+
+        assert_eq!(sel.level_count(), 2);
+        assert!(sel.is_selected(0, 4));
+        assert!(sel.is_selected(1, 2));
+        assert!(!sel.is_selected(1, 5));
     }
 
     #[test]
@@ -544,6 +609,188 @@ mod tests {
         assert!(filtered.is_selected(0, 5)); // Level 0 unchanged
         assert!(filtered.is_selected(1, 25)); // Level 1: 25 < 50
         assert!(!filtered.is_selected(1, 75)); // Level 1: 75 >= 50
+    }
+
+    #[test]
+    fn test_factorized_selection_filter_level_invalid() {
+        let sel = FactorizedSelection::all(&[10, 100]);
+
+        // Filtering a non-existent level should not panic
+        let filtered = sel.filter_level(5, |_| true);
+        assert_eq!(filtered.level_count(), 2);
+    }
+
+    #[test]
+    fn test_factorized_selection_is_selected_invalid_level() {
+        let sel = FactorizedSelection::all(&[10]);
+        assert!(!sel.is_selected(5, 0)); // Non-existent level
+    }
+
+    #[test]
+    fn test_factorized_selection_level() {
+        let sel = FactorizedSelection::all(&[10, 20]);
+
+        let level0 = sel.level(0);
+        assert!(level0.is_some());
+        assert_eq!(level0.unwrap().selected_count(), 10);
+
+        let level1 = sel.level(1);
+        assert!(level1.is_some());
+        assert_eq!(level1.unwrap().selected_count(), 20);
+
+        assert!(sel.level(5).is_none());
+    }
+
+    #[test]
+    fn test_factorized_selection_selected_count_single_level() {
+        let mut sel = FactorizedSelection::all(&[10]);
+        let multiplicities: Vec<Vec<usize>> = vec![vec![1; 10]];
+
+        let count = sel.selected_count(&multiplicities);
+        assert_eq!(count, 10);
+    }
+
+    #[test]
+    fn test_factorized_selection_selected_count_multi_level() {
+        let level_sels = vec![
+            LevelSelection::all(2),                            // 2 parents
+            LevelSelection::from_predicate(4, |i| i % 2 == 0), // Select indices 0, 2
+        ];
+        let mut sel = FactorizedSelection::new(level_sels);
+
+        // Parent 0 has 2 children (indices 0, 1)
+        // Parent 1 has 2 children (indices 2, 3)
+        let multiplicities = vec![
+            vec![1, 1], // Level 0 multiplicities
+            vec![2, 2], // Level 1 multiplicities (children per parent)
+        ];
+
+        let count = sel.selected_count(&multiplicities);
+        // Parent 0 is selected, children 0 is selected (1 passes)
+        // Parent 1 is selected, child 2 is selected (1 passes)
+        assert_eq!(count, 2);
+    }
+
+    #[test]
+    fn test_factorized_selection_selected_count_cached() {
+        let mut sel = FactorizedSelection::all(&[5]);
+        let multiplicities: Vec<Vec<usize>> = vec![vec![1; 5]];
+
+        // First call computes
+        let count1 = sel.selected_count(&multiplicities);
+        assert_eq!(count1, 5);
+
+        // Second call uses cache
+        let count2 = sel.selected_count(&multiplicities);
+        assert_eq!(count2, 5);
+    }
+
+    #[test]
+    fn test_factorized_selection_selected_count_empty() {
+        let mut sel = FactorizedSelection::all(&[]);
+        let multiplicities: Vec<Vec<usize>> = vec![];
+
+        assert_eq!(sel.selected_count(&multiplicities), 0);
+    }
+
+    #[test]
+    fn test_factorized_selection_invalidate_cache() {
+        let mut sel = FactorizedSelection::all(&[5]);
+        let multiplicities: Vec<Vec<usize>> = vec![vec![1; 5]];
+
+        // Compute and cache
+        let _ = sel.selected_count(&multiplicities);
+
+        // Invalidate
+        sel.invalidate_cache();
+
+        // Should recompute (no way to verify, but shouldn't crash)
+        let _ = sel.selected_count(&multiplicities);
+    }
+
+    #[test]
+    fn test_chunk_state_flat() {
+        let state = ChunkState::flat(100);
+        assert!(state.is_flat());
+        assert!(!state.is_factorized());
+        assert_eq!(state.logical_row_count(), 100);
+        assert_eq!(state.level_count(), 1);
+    }
+
+    #[test]
+    fn test_chunk_state_unflat() {
+        let state = ChunkState::unflat(3, 1000);
+        assert!(!state.is_flat());
+        assert!(state.is_factorized());
+        assert_eq!(state.logical_row_count(), 1000);
+        assert_eq!(state.level_count(), 3);
+    }
+
+    #[test]
+    fn test_chunk_state_factorization_state() {
+        let state = ChunkState::flat(50);
+        let fs = state.factorization_state();
+        assert!(fs.is_flat());
+    }
+
+    #[test]
+    fn test_chunk_state_selection() {
+        let mut state = ChunkState::unflat(2, 100);
+
+        // Initially no selection
+        assert!(state.selection().is_none());
+
+        // Set selection
+        let sel = FactorizedSelection::all(&[10, 100]);
+        state.set_selection(sel);
+
+        assert!(state.selection().is_some());
+        assert_eq!(state.selection().unwrap().level_count(), 2);
+    }
+
+    #[test]
+    fn test_chunk_state_selection_mut() {
+        let mut state = ChunkState::unflat(2, 100);
+
+        // Set selection
+        let sel = FactorizedSelection::all(&[10, 100]);
+        state.set_selection(sel);
+
+        // Get mutable access
+        let sel_mut = state.selection_mut();
+        assert!(sel_mut.is_some());
+
+        // Clear via mutable access
+        *sel_mut = None;
+        assert!(state.selection().is_none());
+    }
+
+    #[test]
+    fn test_chunk_state_clear_selection() {
+        let mut state = ChunkState::unflat(2, 100);
+
+        let sel = FactorizedSelection::all(&[10, 100]);
+        state.set_selection(sel);
+        assert!(state.selection().is_some());
+
+        state.clear_selection();
+        assert!(state.selection().is_none());
+    }
+
+    #[test]
+    fn test_chunk_state_set_state() {
+        let mut state = ChunkState::flat(100);
+        assert!(state.is_flat());
+        assert_eq!(state.generation(), 0);
+
+        state.set_state(FactorizationState::Unflat {
+            level_count: 2,
+            logical_rows: 200,
+        });
+
+        assert!(state.is_factorized());
+        assert_eq!(state.logical_row_count(), 200);
+        assert_eq!(state.generation(), 1); // Cache invalidated
     }
 
     #[test]
@@ -579,6 +826,32 @@ mod tests {
     }
 
     #[test]
+    fn test_chunk_state_cached_multiplicities() {
+        let mut state = ChunkState::unflat(2, 100);
+
+        // Initially not cached
+        assert!(state.cached_multiplicities().is_none());
+
+        // Compute multiplicities
+        let _ = state.get_or_compute_multiplicities(|| vec![1, 2, 3]);
+
+        // Now cached
+        assert!(state.cached_multiplicities().is_some());
+        assert_eq!(state.cached_multiplicities().unwrap().len(), 3);
+    }
+
+    #[test]
+    fn test_chunk_state_set_cached_multiplicities() {
+        let mut state = ChunkState::unflat(2, 100);
+
+        let mults: Arc<[usize]> = vec![5, 10, 15].into();
+        state.set_cached_multiplicities(mults);
+
+        assert!(state.cached_multiplicities().is_some());
+        assert_eq!(state.cached_multiplicities().unwrap().len(), 3);
+    }
+
+    #[test]
     fn test_chunk_state_generation() {
         let mut state = ChunkState::flat(100);
         assert_eq!(state.generation(), 0);
@@ -591,5 +864,13 @@ mod tests {
             logical_rows: 200,
         });
         assert_eq!(state.generation(), 2);
+    }
+
+    #[test]
+    fn test_chunk_state_default() {
+        let state = ChunkState::default();
+        assert!(state.is_flat());
+        assert_eq!(state.logical_row_count(), 0);
+        assert_eq!(state.generation(), 0);
     }
 }

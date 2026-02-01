@@ -600,6 +600,49 @@ mod tests {
         chunk
     }
 
+    /// Creates a test chunk with float values.
+    fn create_float_chunk() -> FactorizedChunk {
+        let mut data = ValueVector::with_type(LogicalType::Float64);
+        data.push_float64(1.5);
+        data.push_float64(2.5);
+        data.push_float64(3.5);
+        let level0 = FactorizationLevel::flat(
+            vec![FactorizedVector::flat(data)],
+            vec!["value".to_string()],
+        );
+        let mut chunk = FactorizedChunk::empty();
+        chunk.add_factorized_level(level0);
+        chunk
+    }
+
+    /// Creates a test chunk with string values.
+    fn create_string_chunk() -> FactorizedChunk {
+        let mut data = ValueVector::with_type(LogicalType::String);
+        data.push_string("apple");
+        data.push_string("banana");
+        data.push_string("cherry");
+        let level0 = FactorizationLevel::flat(
+            vec![FactorizedVector::flat(data)],
+            vec!["fruit".to_string()],
+        );
+        let mut chunk = FactorizedChunk::empty();
+        chunk.add_factorized_level(level0);
+        chunk
+    }
+
+    /// Creates a test chunk with boolean values.
+    fn create_bool_chunk() -> FactorizedChunk {
+        let mut data = ValueVector::with_type(LogicalType::Bool);
+        data.push_bool(true);
+        data.push_bool(false);
+        data.push_bool(true);
+        let level0 =
+            FactorizationLevel::flat(vec![FactorizedVector::flat(data)], vec!["flag".to_string()]);
+        let mut chunk = FactorizedChunk::empty();
+        chunk.add_factorized_level(level0);
+        chunk
+    }
+
     #[test]
     fn test_column_predicate_evaluate() {
         let chunk = create_test_chunk();
@@ -613,6 +656,200 @@ mod tests {
         assert!(pred.evaluate(&chunk, 1, 2)); // 3 > 2 = true
         assert!(pred.evaluate(&chunk, 1, 3)); // 4 > 2 = true
         assert!(pred.evaluate(&chunk, 1, 4)); // 5 > 2 = true
+    }
+
+    #[test]
+    fn test_column_predicate_ne() {
+        let chunk = create_test_chunk();
+
+        // Predicate: child value != 3
+        let pred = ColumnPredicate::ne(1, 0, Value::Int64(3));
+
+        assert!(pred.evaluate(&chunk, 1, 0)); // 1 != 3
+        assert!(pred.evaluate(&chunk, 1, 1)); // 2 != 3
+        assert!(!pred.evaluate(&chunk, 1, 2)); // 3 != 3 = false
+        assert!(pred.evaluate(&chunk, 1, 3)); // 4 != 3
+        assert!(pred.evaluate(&chunk, 1, 4)); // 5 != 3
+    }
+
+    #[test]
+    fn test_column_predicate_lt() {
+        let chunk = create_test_chunk();
+
+        // Predicate: child value < 3
+        let pred = ColumnPredicate::lt(1, 0, Value::Int64(3));
+
+        assert!(pred.evaluate(&chunk, 1, 0)); // 1 < 3
+        assert!(pred.evaluate(&chunk, 1, 1)); // 2 < 3
+        assert!(!pred.evaluate(&chunk, 1, 2)); // 3 < 3 = false
+        assert!(!pred.evaluate(&chunk, 1, 3)); // 4 < 3 = false
+    }
+
+    #[test]
+    fn test_column_predicate_le_ge() {
+        let chunk = create_test_chunk();
+
+        // Predicate: child value <= 3
+        let pred_le = ColumnPredicate::new(1, 0, CompareOp::Le, Value::Int64(3));
+        assert!(pred_le.evaluate(&chunk, 1, 0)); // 1 <= 3
+        assert!(pred_le.evaluate(&chunk, 1, 2)); // 3 <= 3
+        assert!(!pred_le.evaluate(&chunk, 1, 3)); // 4 <= 3 = false
+
+        // Predicate: child value >= 3
+        let pred_ge = ColumnPredicate::new(1, 0, CompareOp::Ge, Value::Int64(3));
+        assert!(!pred_ge.evaluate(&chunk, 1, 0)); // 1 >= 3 = false
+        assert!(pred_ge.evaluate(&chunk, 1, 2)); // 3 >= 3
+        assert!(pred_ge.evaluate(&chunk, 1, 3)); // 4 >= 3
+    }
+
+    #[test]
+    fn test_column_predicate_float() {
+        let chunk = create_float_chunk();
+
+        // Float comparisons
+        let pred_eq = ColumnPredicate::eq(0, 0, Value::Float64(2.5));
+        assert!(!pred_eq.evaluate(&chunk, 0, 0)); // 1.5 == 2.5 = false
+        assert!(pred_eq.evaluate(&chunk, 0, 1)); // 2.5 == 2.5
+
+        let pred_gt = ColumnPredicate::gt(0, 0, Value::Float64(2.0));
+        assert!(!pred_gt.evaluate(&chunk, 0, 0)); // 1.5 > 2.0 = false
+        assert!(pred_gt.evaluate(&chunk, 0, 1)); // 2.5 > 2.0
+        assert!(pred_gt.evaluate(&chunk, 0, 2)); // 3.5 > 2.0
+
+        // Float ne, lt, le, ge
+        let pred_ne = ColumnPredicate::ne(0, 0, Value::Float64(2.5));
+        assert!(pred_ne.evaluate(&chunk, 0, 0)); // 1.5 != 2.5
+        assert!(!pred_ne.evaluate(&chunk, 0, 1)); // 2.5 != 2.5 = false
+
+        let pred_lt = ColumnPredicate::new(0, 0, CompareOp::Lt, Value::Float64(2.5));
+        assert!(pred_lt.evaluate(&chunk, 0, 0)); // 1.5 < 2.5
+
+        let pred_le = ColumnPredicate::new(0, 0, CompareOp::Le, Value::Float64(2.5));
+        assert!(pred_le.evaluate(&chunk, 0, 1)); // 2.5 <= 2.5
+
+        let pred_ge = ColumnPredicate::new(0, 0, CompareOp::Ge, Value::Float64(2.5));
+        assert!(pred_ge.evaluate(&chunk, 0, 1)); // 2.5 >= 2.5
+    }
+
+    #[test]
+    fn test_column_predicate_string() {
+        let chunk = create_string_chunk();
+
+        // String comparisons
+        let pred_eq = ColumnPredicate::eq(0, 0, Value::String("banana".into()));
+        assert!(!pred_eq.evaluate(&chunk, 0, 0)); // "apple" == "banana" = false
+        assert!(pred_eq.evaluate(&chunk, 0, 1)); // "banana" == "banana"
+
+        let pred_lt = ColumnPredicate::lt(0, 0, Value::String("banana".into()));
+        assert!(pred_lt.evaluate(&chunk, 0, 0)); // "apple" < "banana"
+        assert!(!pred_lt.evaluate(&chunk, 0, 1)); // "banana" < "banana" = false
+        assert!(!pred_lt.evaluate(&chunk, 0, 2)); // "cherry" < "banana" = false
+
+        // String ne, le, gt, ge
+        let pred_ne = ColumnPredicate::ne(0, 0, Value::String("banana".into()));
+        assert!(pred_ne.evaluate(&chunk, 0, 0)); // "apple" != "banana"
+        assert!(!pred_ne.evaluate(&chunk, 0, 1)); // "banana" != "banana" = false
+
+        let pred_le = ColumnPredicate::new(0, 0, CompareOp::Le, Value::String("banana".into()));
+        assert!(pred_le.evaluate(&chunk, 0, 1)); // "banana" <= "banana"
+
+        let pred_gt = ColumnPredicate::new(0, 0, CompareOp::Gt, Value::String("banana".into()));
+        assert!(pred_gt.evaluate(&chunk, 0, 2)); // "cherry" > "banana"
+
+        let pred_ge = ColumnPredicate::new(0, 0, CompareOp::Ge, Value::String("banana".into()));
+        assert!(pred_ge.evaluate(&chunk, 0, 1)); // "banana" >= "banana"
+    }
+
+    #[test]
+    fn test_column_predicate_bool() {
+        let chunk = create_bool_chunk();
+
+        // Bool comparisons (only eq and ne make sense)
+        let pred_eq = ColumnPredicate::eq(0, 0, Value::Bool(true));
+        assert!(pred_eq.evaluate(&chunk, 0, 0)); // true == true
+        assert!(!pred_eq.evaluate(&chunk, 0, 1)); // false == true = false
+        assert!(pred_eq.evaluate(&chunk, 0, 2)); // true == true
+
+        let pred_ne = ColumnPredicate::ne(0, 0, Value::Bool(true));
+        assert!(!pred_ne.evaluate(&chunk, 0, 0)); // true != true = false
+        assert!(pred_ne.evaluate(&chunk, 0, 1)); // false != true
+
+        // Lt/Gt on bool should return false
+        let pred_lt = ColumnPredicate::lt(0, 0, Value::Bool(true));
+        assert!(!pred_lt.evaluate(&chunk, 0, 0));
+    }
+
+    #[test]
+    fn test_column_predicate_mixed_int_float() {
+        let chunk = create_test_chunk();
+
+        // Compare Int64 column with Float64 value
+        let pred = ColumnPredicate::gt(1, 0, Value::Float64(2.5));
+        assert!(!pred.evaluate(&chunk, 1, 0)); // 1 > 2.5 = false
+        assert!(!pred.evaluate(&chunk, 1, 1)); // 2 > 2.5 = false
+        assert!(pred.evaluate(&chunk, 1, 2)); // 3 > 2.5 = true
+
+        // All comparison ops with mixed types
+        let pred_eq = ColumnPredicate::eq(1, 0, Value::Float64(3.0));
+        assert!(pred_eq.evaluate(&chunk, 1, 2)); // 3 == 3.0
+
+        let pred_ne = ColumnPredicate::ne(1, 0, Value::Float64(3.0));
+        assert!(!pred_ne.evaluate(&chunk, 1, 2)); // 3 != 3.0 = false
+
+        let pred_lt = ColumnPredicate::lt(1, 0, Value::Float64(3.0));
+        assert!(pred_lt.evaluate(&chunk, 1, 1)); // 2 < 3.0
+
+        let pred_le = ColumnPredicate::new(1, 0, CompareOp::Le, Value::Float64(3.0));
+        assert!(pred_le.evaluate(&chunk, 1, 2)); // 3 <= 3.0
+
+        let pred_ge = ColumnPredicate::new(1, 0, CompareOp::Ge, Value::Float64(3.0));
+        assert!(pred_ge.evaluate(&chunk, 1, 2)); // 3 >= 3.0
+    }
+
+    #[test]
+    fn test_column_predicate_type_mismatch() {
+        let chunk = create_test_chunk();
+
+        // Compare Int64 column with String value - should return false
+        let pred = ColumnPredicate::eq(1, 0, Value::String("hello".into()));
+        assert!(!pred.evaluate(&chunk, 1, 0));
+    }
+
+    #[test]
+    fn test_column_predicate_wrong_level() {
+        let chunk = create_test_chunk();
+
+        // Predicate targets level 1, but we evaluate at level 0
+        let pred = ColumnPredicate::gt(1, 0, Value::Int64(5));
+
+        // Should return true when evaluated at wrong level (predicate doesn't apply)
+        assert!(pred.evaluate(&chunk, 0, 0));
+    }
+
+    #[test]
+    fn test_column_predicate_invalid_column() {
+        let chunk = create_test_chunk();
+
+        // Predicate targets column 5 which doesn't exist
+        let pred = ColumnPredicate::eq(1, 5, Value::Int64(1));
+
+        assert!(!pred.evaluate(&chunk, 1, 0));
+    }
+
+    #[test]
+    fn test_column_predicate_invalid_level() {
+        let chunk = create_test_chunk();
+
+        // Predicate targets level 5 which doesn't exist
+        let pred = ColumnPredicate::eq(5, 0, Value::Int64(1));
+
+        assert!(!pred.evaluate(&chunk, 5, 0));
+    }
+
+    #[test]
+    fn test_column_predicate_target_level() {
+        let pred = ColumnPredicate::eq(2, 0, Value::Int64(1));
+        assert_eq!(pred.target_level(), Some(2));
     }
 
     #[test]
@@ -634,6 +871,17 @@ mod tests {
     }
 
     #[test]
+    fn test_column_predicate_batch_invalid_level() {
+        let chunk = create_test_chunk();
+
+        // Predicate targets level 5 which doesn't exist
+        let pred = ColumnPredicate::eq(5, 0, Value::Int64(1));
+
+        let selection = pred.evaluate_batch(&chunk, 5);
+        assert_eq!(selection.selected_count(), 0);
+    }
+
+    #[test]
     fn test_and_predicate() {
         let chunk = create_test_chunk();
 
@@ -652,6 +900,27 @@ mod tests {
     }
 
     #[test]
+    fn test_and_predicate_target_level() {
+        // Same level - should return that level
+        let pred1 = AndPredicate::new(vec![
+            Box::new(ColumnPredicate::gt(1, 0, Value::Int64(1))),
+            Box::new(ColumnPredicate::lt(1, 0, Value::Int64(5))),
+        ]);
+        assert_eq!(pred1.target_level(), Some(1));
+
+        // Different levels - should return None
+        let pred2 = AndPredicate::new(vec![
+            Box::new(ColumnPredicate::gt(0, 0, Value::Int64(1))),
+            Box::new(ColumnPredicate::lt(1, 0, Value::Int64(5))),
+        ]);
+        assert_eq!(pred2.target_level(), None);
+
+        // Empty predicates
+        let pred3 = AndPredicate::new(vec![]);
+        assert_eq!(pred3.target_level(), None);
+    }
+
+    #[test]
     fn test_or_predicate() {
         let chunk = create_test_chunk();
 
@@ -667,6 +936,27 @@ mod tests {
         assert!(!pred.evaluate(&chunk, 1, 2)); // 3: false
         assert!(!pred.evaluate(&chunk, 1, 3)); // 4: false
         assert!(pred.evaluate(&chunk, 1, 4)); // 5: true
+    }
+
+    #[test]
+    fn test_or_predicate_target_level() {
+        // Same level - should return that level
+        let pred1 = OrPredicate::new(vec![
+            Box::new(ColumnPredicate::eq(1, 0, Value::Int64(1))),
+            Box::new(ColumnPredicate::eq(1, 0, Value::Int64(5))),
+        ]);
+        assert_eq!(pred1.target_level(), Some(1));
+
+        // Different levels - should return None
+        let pred2 = OrPredicate::new(vec![
+            Box::new(ColumnPredicate::eq(0, 0, Value::Int64(1))),
+            Box::new(ColumnPredicate::eq(1, 0, Value::Int64(5))),
+        ]);
+        assert_eq!(pred2.target_level(), None);
+
+        // Empty predicates
+        let pred3 = OrPredicate::new(vec![]);
+        assert_eq!(pred3.target_level(), None);
     }
 
     #[test]
@@ -694,5 +984,90 @@ mod tests {
         assert!(selection.is_selected(1, 2));
         assert!(selection.is_selected(1, 3));
         assert!(selection.is_selected(1, 4));
+    }
+
+    #[test]
+    fn test_factorized_filter_operator_apply_filter() {
+        let chunk = create_test_chunk();
+
+        // Create a mock operator using the apply_filter method
+        // We can test apply_filter indirectly by creating the selection
+        let pred = ColumnPredicate::gt(1, 0, Value::Int64(2));
+
+        let level_count = chunk.level_count();
+        let level_counts: Vec<usize> = (0..level_count)
+            .map(|i| chunk.level(i).map_or(0, |l| l.physical_value_count()))
+            .collect();
+
+        let mut selection = FactorizedSelection::all(&level_counts);
+
+        if let Some(target_level) = pred.target_level() {
+            selection = selection
+                .filter_level(target_level, |idx| pred.evaluate(&chunk, target_level, idx));
+        }
+
+        // Verify selection
+        assert_eq!(selection.level(1).unwrap().selected_count(), 3);
+    }
+
+    #[test]
+    fn test_factorized_filter_operator_empty_chunk() {
+        let chunk = FactorizedChunk::empty();
+
+        let pred = ColumnPredicate::gt(0, 0, Value::Int64(2));
+        let level_counts: Vec<usize> = Vec::new();
+        let selection = FactorizedSelection::all(&level_counts);
+
+        // Empty chunk should result in empty selection
+        assert_eq!(selection.level_count(), 0);
+        assert!(!pred.evaluate(&chunk, 0, 0));
+    }
+
+    #[test]
+    fn test_factorized_filter_multi_level_predicate() {
+        let chunk = create_test_chunk();
+
+        // Create a predicate that spans multiple levels (no target level)
+        let pred = AndPredicate::new(vec![
+            Box::new(ColumnPredicate::gt(0, 0, Value::Int64(15))), // source > 15
+            Box::new(ColumnPredicate::lt(1, 0, Value::Int64(5))),  // child < 5
+        ]);
+
+        assert_eq!(pred.target_level(), None);
+
+        // Test evaluation - only source 20 (idx 1) passes level 0 filter
+        // And children 4 (idx 3) passes level 1 filter
+        // At level 0, idx 0 (value 10) should fail
+        assert!(!pred.evaluate(&chunk, 0, 0)); // 10 > 15 = false
+        assert!(pred.evaluate(&chunk, 0, 1)); // 20 > 15 = true
+
+        // At level 1, all pass the level 0 check, then check level 1
+        assert!(pred.evaluate(&chunk, 1, 3)); // 4 < 5 = true
+        assert!(!pred.evaluate(&chunk, 1, 4)); // 5 < 5 = false
+    }
+
+    #[test]
+    fn test_compare_op_debug() {
+        // Ensure CompareOp derives Debug properly
+        assert_eq!(format!("{:?}", CompareOp::Eq), "Eq");
+        assert_eq!(format!("{:?}", CompareOp::Ne), "Ne");
+        assert_eq!(format!("{:?}", CompareOp::Lt), "Lt");
+        assert_eq!(format!("{:?}", CompareOp::Le), "Le");
+        assert_eq!(format!("{:?}", CompareOp::Gt), "Gt");
+        assert_eq!(format!("{:?}", CompareOp::Ge), "Ge");
+    }
+
+    #[test]
+    fn test_compare_op_clone_eq() {
+        let op1 = CompareOp::Eq;
+        let op2 = op1;
+        assert_eq!(op1, op2);
+    }
+
+    #[test]
+    fn test_column_predicate_debug_clone() {
+        let pred = ColumnPredicate::eq(1, 0, Value::Int64(5));
+        let pred_clone = pred.clone();
+        assert_eq!(format!("{:?}", pred), format!("{:?}", pred_clone));
     }
 }

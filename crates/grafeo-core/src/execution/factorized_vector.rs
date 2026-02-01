@@ -378,7 +378,7 @@ impl Iterator for FactorizedVectorIter<'_> {
 
 #[cfg(test)]
 mod tests {
-    use grafeo_common::types::NodeId;
+    use grafeo_common::types::{EdgeId, NodeId};
 
     use super::*;
 
@@ -422,6 +422,149 @@ mod tests {
     }
 
     #[test]
+    fn test_empty_vector() {
+        let vec = FactorizedVector::empty(LogicalType::Int64);
+
+        assert!(vec.is_flat());
+        assert_eq!(vec.physical_len(), 0);
+        assert_eq!(vec.data_type(), LogicalType::Int64);
+    }
+
+    #[test]
+    fn test_data_type() {
+        let mut data = ValueVector::with_type(LogicalType::String);
+        data.push_string("hello");
+
+        let vec = FactorizedVector::flat(data);
+        assert_eq!(vec.data_type(), LogicalType::String);
+    }
+
+    #[test]
+    fn test_data_access() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(42);
+
+        let vec = FactorizedVector::flat(data);
+
+        // Test immutable access
+        assert_eq!(vec.data().len(), 1);
+        assert_eq!(vec.data().get_int64(0), Some(42));
+    }
+
+    #[test]
+    fn test_data_mut() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(42);
+
+        let mut vec = FactorizedVector::flat(data);
+
+        // Modify via mutable access
+        vec.data_mut().push_int64(100);
+        assert_eq!(vec.physical_len(), 2);
+    }
+
+    #[test]
+    fn test_offsets_flat() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(1);
+
+        let vec = FactorizedVector::flat(data);
+        assert!(vec.offsets().is_none());
+    }
+
+    #[test]
+    fn test_offsets_unflat() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(10);
+        data.push_int64(20);
+        data.push_int64(30);
+
+        let offsets = vec![0, 2, 3];
+        let vec = FactorizedVector::unflat(data, offsets.clone(), 2);
+
+        assert_eq!(vec.offsets(), Some(offsets.as_slice()));
+    }
+
+    #[test]
+    fn test_get_physical() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(10);
+        data.push_int64(20);
+
+        let vec = FactorizedVector::flat(data);
+
+        assert_eq!(vec.get_physical(0), Some(Value::Int64(10)));
+        assert_eq!(vec.get_physical(1), Some(Value::Int64(20)));
+        assert_eq!(vec.get_physical(2), None);
+    }
+
+    #[test]
+    fn test_get_node_id_physical() {
+        let mut data = ValueVector::with_type(LogicalType::Node);
+        data.push_node_id(NodeId::new(100));
+        data.push_node_id(NodeId::new(200));
+
+        let vec = FactorizedVector::flat(data);
+
+        assert_eq!(vec.get_node_id_physical(0), Some(NodeId::new(100)));
+        assert_eq!(vec.get_node_id_physical(1), Some(NodeId::new(200)));
+        assert_eq!(vec.get_node_id_physical(2), None);
+    }
+
+    #[test]
+    fn test_get_edge_id_physical() {
+        let mut data = ValueVector::with_type(LogicalType::Edge);
+        data.push_edge_id(EdgeId::new(100));
+        data.push_edge_id(EdgeId::new(200));
+
+        let vec = FactorizedVector::flat(data);
+
+        assert_eq!(vec.get_edge_id_physical(0), Some(EdgeId::new(100)));
+        assert_eq!(vec.get_edge_id_physical(1), Some(EdgeId::new(200)));
+        assert_eq!(vec.get_edge_id_physical(2), None);
+    }
+
+    #[test]
+    fn test_range_for_parent_flat() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(1);
+        data.push_int64(2);
+        data.push_int64(3);
+
+        let vec = FactorizedVector::flat(data);
+
+        assert_eq!(vec.range_for_parent(0), (0, 1));
+        assert_eq!(vec.range_for_parent(1), (1, 2));
+        assert_eq!(vec.range_for_parent(2), (2, 3));
+    }
+
+    #[test]
+    fn test_range_for_parent_out_of_bounds() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(10);
+        data.push_int64(20);
+
+        let offsets = vec![0, 2];
+        let vec = FactorizedVector::unflat(data, offsets, 1);
+
+        // Out of bounds should return (0, 0)
+        assert_eq!(vec.range_for_parent(10), (0, 0));
+    }
+
+    #[test]
+    fn test_count_for_parent_out_of_bounds() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(10);
+        data.push_int64(20);
+
+        let offsets = vec![0, 2];
+        let vec = FactorizedVector::unflat(data, offsets, 1);
+
+        // Out of bounds should return 0
+        assert_eq!(vec.count_for_parent(10), 0);
+    }
+
+    #[test]
     fn test_get_for_parent() {
         let mut data = ValueVector::with_type(LogicalType::Int64);
         data.push_int64(10);
@@ -439,6 +582,54 @@ mod tests {
         // Parent 1's values
         assert_eq!(vec.get_for_parent(1, 0), Some(Value::Int64(30)));
         assert_eq!(vec.get_for_parent(1, 1), None); // Out of range
+    }
+
+    #[test]
+    fn test_get_for_parent_flat() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(10);
+        data.push_int64(20);
+
+        let vec = FactorizedVector::flat(data);
+
+        assert_eq!(vec.get_for_parent(0, 0), Some(Value::Int64(10)));
+        assert_eq!(vec.get_for_parent(1, 0), Some(Value::Int64(20)));
+        assert_eq!(vec.get_for_parent(0, 1), None); // Only one value per parent in flat mode
+    }
+
+    #[test]
+    fn test_flatten_flat_no_mults() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(1);
+        data.push_int64(2);
+        data.push_int64(3);
+
+        let vec = FactorizedVector::flat(data);
+        let flat = vec.flatten(None);
+
+        assert_eq!(flat.len(), 3);
+        assert_eq!(flat.get_int64(0), Some(1));
+        assert_eq!(flat.get_int64(2), Some(3));
+    }
+
+    #[test]
+    fn test_flatten_flat_with_mults() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(10);
+        data.push_int64(20);
+
+        let vec = FactorizedVector::flat(data);
+
+        // Duplicate first value 3 times, second value 2 times
+        let mults = [3, 2];
+        let flat = vec.flatten(Some(&mults));
+
+        assert_eq!(flat.len(), 5);
+        assert_eq!(flat.get_int64(0), Some(10));
+        assert_eq!(flat.get_int64(1), Some(10));
+        assert_eq!(flat.get_int64(2), Some(10));
+        assert_eq!(flat.get_int64(3), Some(20));
+        assert_eq!(flat.get_int64(4), Some(20));
     }
 
     #[test]
@@ -483,6 +674,18 @@ mod tests {
     }
 
     #[test]
+    fn test_logical_row_count_flat() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(1);
+        data.push_int64(2);
+        data.push_int64(3);
+
+        let vec = FactorizedVector::flat(data);
+
+        assert_eq!(vec.logical_row_count(None), 3);
+    }
+
+    #[test]
     fn test_logical_row_count() {
         let mut data = ValueVector::with_type(LogicalType::Int64);
         data.push_int64(10);
@@ -498,6 +701,21 @@ mod tests {
         // With multiplicities [2, 3]: 2*2 + 1*3 = 7
         let mults = [2, 3];
         assert_eq!(vec.logical_row_count(Some(&mults)), 7);
+    }
+
+    #[test]
+    fn test_logical_row_count_missing_mult() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(10);
+        data.push_int64(20);
+        data.push_int64(30);
+
+        let offsets = vec![0, 2, 3];
+        let vec = FactorizedVector::unflat(data, offsets, 2);
+
+        // Only provide one multiplicity - second should default to 1
+        let mults = [2];
+        assert_eq!(vec.logical_row_count(Some(&mults)), 5); // 2*2 + 1*1 = 5
     }
 
     #[test]
@@ -529,6 +747,32 @@ mod tests {
         assert_eq!(items[0], (0, 0, Value::Int64(10)));
         assert_eq!(items[1], (0, 1, Value::Int64(20)));
         assert_eq!(items[2], (1, 2, Value::Int64(30)));
+    }
+
+    #[test]
+    fn test_iter_with_parent_empty_parents() {
+        // Parent 0 has [], parent 1 has [10, 20], parent 2 has []
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(10);
+        data.push_int64(20);
+
+        let offsets = vec![0, 0, 2, 2];
+        let vec = FactorizedVector::unflat(data, offsets, 3);
+        let items: Vec<_> = vec.iter_with_parent().collect();
+
+        // Should skip empty parents
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0], (1, 0, Value::Int64(10)));
+        assert_eq!(items[1], (1, 1, Value::Int64(20)));
+    }
+
+    #[test]
+    fn test_iter_with_parent_empty() {
+        let data = ValueVector::with_type(LogicalType::Int64);
+        let vec = FactorizedVector::flat(data);
+        let items: Vec<_> = vec.iter_with_parent().collect();
+
+        assert!(items.is_empty());
     }
 
     #[test]
@@ -565,5 +809,41 @@ mod tests {
         assert_eq!(flat.get_node_id(0), Some(NodeId::new(100)));
         assert_eq!(flat.get_node_id(1), Some(NodeId::new(200)));
         assert_eq!(flat.get_node_id(2), Some(NodeId::new(300)));
+    }
+
+    #[test]
+    fn test_factorized_state_debug() {
+        let state_flat = FactorizedState::Flat;
+        assert!(format!("{state_flat:?}").contains("Flat"));
+
+        let state_unflat = FactorizedState::Unflat(UnflatMetadata {
+            offsets: vec![0, 1],
+            parent_count: 1,
+        });
+        assert!(format!("{state_unflat:?}").contains("Unflat"));
+    }
+
+    #[test]
+    fn test_unflat_metadata_debug() {
+        let meta = UnflatMetadata {
+            offsets: vec![0, 2, 5],
+            parent_count: 2,
+        };
+        let debug = format!("{meta:?}");
+        assert!(debug.contains("offsets"));
+        assert!(debug.contains("parent_count"));
+    }
+
+    #[test]
+    fn test_factorized_vector_clone() {
+        let mut data = ValueVector::with_type(LogicalType::Int64);
+        data.push_int64(1);
+        data.push_int64(2);
+
+        let vec = FactorizedVector::flat(data);
+        let cloned = vec.clone();
+
+        assert_eq!(vec.physical_len(), cloned.physical_len());
+        assert_eq!(vec.is_flat(), cloned.is_flat());
     }
 }

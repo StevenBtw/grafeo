@@ -523,7 +523,7 @@ mod tests {
     use crate::execution::factorized_chunk::FactorizationLevel;
     use crate::execution::factorized_vector::FactorizedVector;
     use crate::execution::vector::ValueVector;
-    use grafeo_common::types::LogicalType;
+    use grafeo_common::types::{LogicalType, NodeId};
 
     fn create_test_chunk() -> FactorizedChunk {
         // Level 0: 2 sources with values [10, 20]
@@ -554,6 +554,104 @@ mod tests {
         chunk
     }
 
+    fn create_node_chunk() -> FactorizedChunk {
+        let mut source_data = ValueVector::with_type(LogicalType::Node);
+        source_data.push_node_id(NodeId::new(100));
+        source_data.push_node_id(NodeId::new(200));
+        let level0 = FactorizationLevel::flat(
+            vec![FactorizedVector::flat(source_data)],
+            vec!["source".to_string()],
+        );
+
+        let mut chunk = FactorizedChunk::empty();
+        chunk.add_factorized_level(level0);
+        chunk
+    }
+
+    #[test]
+    fn test_row_indices_new() {
+        let indices = RowIndices::new(&[0, 1, 2]);
+        assert_eq!(indices.level_count(), 3);
+        assert_eq!(indices.get(0), Some(0));
+        assert_eq!(indices.get(1), Some(1));
+        assert_eq!(indices.get(2), Some(2));
+        assert_eq!(indices.get(3), None);
+    }
+
+    #[test]
+    fn test_row_indices_as_slice() {
+        let indices = RowIndices::new(&[5, 10, 15]);
+        assert_eq!(indices.as_slice(), &[5, 10, 15]);
+    }
+
+    #[test]
+    fn test_row_view_new() {
+        let chunk = create_test_chunk();
+        let indices = RowIndices::new(&[0, 0]);
+
+        let view = RowView::new(&chunk, indices);
+        assert_eq!(view.level_count(), 2);
+    }
+
+    #[test]
+    fn test_row_view_from_ref() {
+        let chunk = create_test_chunk();
+        let indices = RowIndices::new(&[0, 1]);
+
+        let view = RowView::from_ref(&chunk, &indices);
+        assert_eq!(view.get(0, 0), Some(Value::Int64(10)));
+        assert_eq!(view.get(1, 0), Some(Value::Int64(2)));
+    }
+
+    #[test]
+    fn test_row_view_get_node_id() {
+        let chunk = create_node_chunk();
+        let indices = RowIndices::new(&[0]);
+
+        let view = RowView::new(&chunk, indices);
+        assert_eq!(view.get_node_id(0, 0), Some(NodeId::new(100)));
+    }
+
+    #[test]
+    fn test_row_view_get_invalid() {
+        let chunk = create_test_chunk();
+        let indices = RowIndices::new(&[0, 0]);
+
+        let view = RowView::new(&chunk, indices);
+
+        // Invalid level
+        assert_eq!(view.get(10, 0), None);
+
+        // Invalid column
+        assert_eq!(view.get(0, 10), None);
+    }
+
+    #[test]
+    fn test_row_view_values() {
+        let chunk = create_test_chunk();
+        let indices = RowIndices::new(&[0, 0]);
+
+        let view = RowView::new(&chunk, indices);
+        let values: Vec<Value> = view.values().collect();
+
+        assert_eq!(values.len(), 2);
+        assert_eq!(values[0], Value::Int64(10));
+        assert_eq!(values[1], Value::Int64(1));
+    }
+
+    #[test]
+    fn test_row_view_to_vec() {
+        let chunk = create_test_chunk();
+        let indices = RowIndices::new(&[1, 4]);
+
+        let view = RowView::new(&chunk, indices);
+        let vec = view.to_vec();
+
+        assert_eq!(vec.len(), 2);
+        assert_eq!(vec[0], Value::Int64(20));
+        assert_eq!(vec[1], Value::Int64(5));
+    }
+
     #[test]
     fn test_precomputed_iter_count() {
         let chunk = create_test_chunk();
@@ -579,6 +677,41 @@ mod tests {
     }
 
     #[test]
+    fn test_precomputed_iter_get() {
+        let chunk = create_test_chunk();
+        let iter = PrecomputedIter::new(&chunk);
+
+        let indices = iter.get(2).unwrap();
+        assert_eq!(indices.as_slice(), &[0, 2]);
+
+        assert!(iter.get(10).is_none());
+    }
+
+    #[test]
+    fn test_precomputed_iter_rows() {
+        let chunk = create_test_chunk();
+        let iter = PrecomputedIter::new(&chunk);
+
+        let rows: Vec<RowView> = iter.rows().collect();
+        assert_eq!(rows.len(), 5);
+    }
+
+    #[test]
+    fn test_precomputed_iter_reset() {
+        let chunk = create_test_chunk();
+        let mut iter = PrecomputedIter::new(&chunk);
+
+        // Consume some items
+        assert!(iter.next().is_some());
+        assert!(iter.next().is_some());
+        assert_eq!(iter.size_hint().0, 3);
+
+        // Reset
+        iter.reset();
+        assert_eq!(iter.size_hint().0, 5);
+    }
+
+    #[test]
     fn test_row_view_get() {
         let chunk = create_test_chunk();
         let iter = PrecomputedIter::new(&chunk);
@@ -590,6 +723,8 @@ mod tests {
         let last_row = iter.row(4).unwrap();
         assert_eq!(last_row.get(0, 0), Some(Value::Int64(20)));
         assert_eq!(last_row.get(1, 0), Some(Value::Int64(5)));
+
+        assert!(iter.row(10).is_none());
     }
 
     #[test]
@@ -608,12 +743,60 @@ mod tests {
     }
 
     #[test]
+    fn test_streaming_iter_current_indices() {
+        let chunk = create_test_chunk();
+        let iter = StreamingIter::new(&chunk);
+
+        let current = iter.current_indices();
+        assert!(current.is_some());
+        assert_eq!(current.unwrap().as_slice(), &[0, 0]);
+    }
+
+    #[test]
+    fn test_streaming_iter_reset() {
+        let chunk = create_test_chunk();
+        let mut iter = StreamingIter::new(&chunk);
+
+        // Consume some items
+        iter.next();
+        iter.next();
+
+        // Reset
+        iter.reset();
+
+        // Should start from beginning again
+        let first = iter.next().unwrap();
+        assert_eq!(first.as_slice(), &[0, 0]);
+    }
+
+    #[test]
+    fn test_streaming_iter_exhausted() {
+        let chunk = create_test_chunk();
+        let mut iter = StreamingIter::new(&chunk);
+
+        // Consume all items
+        while iter.next().is_some() {}
+
+        // Should return None for current indices
+        assert!(iter.current_indices().is_none());
+    }
+
+    #[test]
     fn test_empty_chunk() {
         let chunk = FactorizedChunk::empty();
         let iter = PrecomputedIter::new(&chunk);
 
         assert!(iter.is_empty());
         assert_eq!(iter.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_chunk_streaming() {
+        let chunk = FactorizedChunk::empty();
+        let mut iter = StreamingIter::new(&chunk);
+
+        assert!(iter.next().is_none());
+        assert!(iter.current_indices().is_none());
     }
 
     #[test]
@@ -638,5 +821,44 @@ mod tests {
 
         assert_eq!(iter.len(), 5);
         assert_eq!(iter.size_hint(), (5, Some(5)));
+    }
+
+    #[test]
+    fn test_single_level_chunk() {
+        let mut source_data = ValueVector::with_type(LogicalType::Int64);
+        source_data.push_int64(1);
+        source_data.push_int64(2);
+        source_data.push_int64(3);
+        let level0 = FactorizationLevel::flat(
+            vec![FactorizedVector::flat(source_data)],
+            vec!["value".to_string()],
+        );
+
+        let mut chunk = FactorizedChunk::empty();
+        chunk.add_factorized_level(level0);
+
+        let iter = PrecomputedIter::new(&chunk);
+        assert_eq!(iter.len(), 3);
+
+        let streaming = StreamingIter::new(&chunk);
+        let indices: Vec<RowIndices> = streaming.collect();
+        assert_eq!(indices.len(), 3);
+    }
+
+    #[test]
+    fn test_row_indices_clone() {
+        let indices = RowIndices::new(&[1, 2, 3]);
+        let cloned = indices.clone();
+
+        assert_eq!(indices.as_slice(), cloned.as_slice());
+    }
+
+    #[test]
+    fn test_row_view_level_count() {
+        let chunk = create_test_chunk();
+        let indices = RowIndices::new(&[0, 0]);
+        let view = RowView::new(&chunk, indices);
+
+        assert_eq!(view.level_count(), 2);
     }
 }
